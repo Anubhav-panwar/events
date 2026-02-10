@@ -1,20 +1,73 @@
 @props(['event'])
-<div class="card overflow-hidden">
-    @php
-        $image = $event->media->first();
-        $imgUrl = $image ? Storage::disk($image->disk)->url($image->path) : 'https://images.unsplash.com/photo-1540574163026-643ea20ade25?q=80&w=1640&auto=format&fit=crop';
-    @endphp
-    <img src="{{ $imgUrl }}" class="w-full h-40 object-cover" alt="{{ $event->title }}">
-    <div class="p-4">
-        <div class="text-sm text-gray-500 flex items-center justify-between">
-            <span>{{ $event->vendorProfile?->business_name }}</span>
-            <span>{{ $event->event_date->format('M d') }}</span>
-        </div>
-        <a href="{{ route('events.show', $event->slug) }}" class="block font-semibold mt-1 text-blue-700">{{ $event->title }}</a>
-        <div class="text-sm text-gray-600 mt-1">{{ \Illuminate\Support\Str::limit($event->address, 40) }}</div>
-        <div class="flex items-center justify-between mt-3">
-            <a class="text-sm text-blue-600" href="{{ route('events.show', $event->slug) }}">View Details</a>
-            <span class="text-sm text-gray-500">{{ $event->ticketTypes->first()?->price ? number_format($event->ticketTypes->first()->price, 2) : 'Free' }}</span>
-        </div>
+@php
+    $image = $event->media->first();
+    $imgUrl = $image ? Storage::disk($image->disk)->url($image->path) : 'https://images.unsplash.com/photo-1540574163026-643ea20ade25?q=80&w=1640&auto=format&fit=crop';
+    $price = $event->ticketTypes->first()?->price ?? null;
+    $formattedPrice = $price ? '$' . number_format($price, 2) : 'Free';
+@endphp
+
+<div class="group">
+    <div class="relative overflow-hidden rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 bg-white border border-gray-100">
+        <a href="{{ route('events.show', $event->slug) }}" class="block">
+            <div class="relative overflow-hidden h-48">
+                <img src="{{ $imgUrl }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="{{ $event->title }}">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+
+                <div class="absolute top-3 right-3">
+                    @if($price === null || $price == 0)
+                        <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg">FREE</span>
+                    @else
+                        <span class="px-3 py-1 bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-bold rounded-full shadow-lg">{{ $formattedPrice }}</span>
+                    @endif
+                </div>
+
+                <div class="absolute bottom-3 left-3 right-3">
+                    <div class="flex items-center gap-2 text-white text-sm">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="font-medium">{{ $event->event_date->format('M d, Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
+                        {{ strtoupper(substr($event->vendorProfile?->business_name ?? 'E', 0, 1)) }}
+                    </div>
+                    <span class="text-sm text-gray-600 font-medium">{{ $event->vendorProfile?->business_name }}</span>
+                </div>
+
+                <h3 class="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {{ $event->title }}
+                </h3>
+
+                @if($event->address)
+                <div class="flex items-start gap-2 text-sm text-gray-600 mb-4">
+                    <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span class="line-clamp-1">{{ \Illuminate\Support\Str::limit($event->address, 45) }}</span>
+                </div>
+                @endif
+
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-600">{{ $event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('g:i A') : $event->start_time }}</span>
+                    </div>
+                    <div class="text-blue-600 font-semibold text-sm group-hover:text-blue-700 flex items-center gap-1">
+                        View Details
+                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </a>
     </div>
 </div>
