@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -13,6 +13,30 @@
 }
 
 @layer components {
+  .app-shell {
+    @apply min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50;
+  }
+
+  .app-content {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .page-section {
+    @apply py-8 md:py-10;
+  }
+
+  .surface {
+    @apply bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm;
+  }
+
+  .page-title {
+    @apply text-2xl md:text-3xl font-bold text-slate-900;
+  }
+
+  .page-subtitle {
+    @apply mt-2 text-sm md:text-base text-slate-600;
+  }
+
   .btn-primary {
     @apply inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold text-sm hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg;
   }
@@ -34,7 +58,7 @@
   }
 
   .card {
-    @apply bg-white shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden;
+    @apply bg-white shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 border border-slate-200/80 overflow-hidden;
   }
 
   .card-hover {
@@ -58,7 +82,7 @@
   }
 
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+    @apply w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
   }
 
   .feature-card {
