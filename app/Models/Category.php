@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Category extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'slug',
+    ];
+
+    public function vendorProfiles()
+    {
+        return $this->belongsToMany(VendorProfile::class, 'category_vendor_profile');
+    }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+}
