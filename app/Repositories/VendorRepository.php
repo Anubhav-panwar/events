@@ -9,7 +9,12 @@ class VendorRepository
 {
     public function findApprovedPaginated(int $perPage = 12)
     {
-        return VendorProfile::query()->where('is_approved', true)->with('categories')->paginate($perPage);
+        return VendorProfile::query()
+            ->where('is_approved', true)
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '')
+            ->with('categories')
+            ->paginate($perPage);
     }
 
     public function findByUser(User $user): ?VendorProfile

@@ -12,7 +12,7 @@
                 @forelse($vendors as $vendor)
                     <div class="surface p-5">
                         <div class="font-semibold text-lg">
-                            <a class="text-blue-700 hover:text-blue-800" href="{{ route('vendors.show', $vendor->slug) }}">{{ $vendor->business_name }}</a>
+                            <a class="text-emerald-700 hover:text-emerald-800" href="{{ route('vendors.show', $vendor->slug) }}">{{ $vendor->business_name }}</a>
                         </div>
                         <div class="text-sm text-slate-600 mt-2">{{ $vendor->address }}</div>
                         <div class="mt-3 text-sm text-slate-700">{{ \Illuminate\Support\Str::limit($vendor->description, 120) }}</div>

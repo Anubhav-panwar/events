@@ -24,7 +24,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 @forelse($events as $event)
                     <div class="surface p-5">
-                        <a class="font-semibold text-blue-700 hover:text-blue-800" href="{{ route('events.show', $event->slug) }}">{{ $event->title }}</a>
+                        <a class="font-semibold text-emerald-700 hover:text-emerald-800" href="{{ route('events.show', $event->slug) }}">{{ $event->title }}</a>
                         <div class="text-sm text-slate-600 mt-2">{{ $event->event_date->format('Y-m-d') }} • {{ $event->address }}</div>
                         @isset($event->distance)
                             <div class="text-xs text-slate-500 mt-1">{{ number_format($event->distance, 2) }} km away</div>

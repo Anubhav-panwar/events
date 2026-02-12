@@ -16,7 +16,7 @@ class OrderController extends Controller
     {
     }
 
-    public function reserve(Request $request, string $slug)
+    public function buy(Request $request, string $slug)
     {
         $request->validate([
             'ticket_type_id' => ['required', 'integer', 'exists:ticket_types,id'],
@@ -33,16 +33,20 @@ class OrderController extends Controller
         try {
             DB::transaction(function () use ($user, $event, $ticketType, $request) {
                 $qty = $request->integer('quantity');
-                $available = $ticketType->quantity - $ticketType->sold;
-                if ($available < $qty) {
-                    abort(422, 'Not enough tickets available');
+                $availableType = $ticketType->quantity - $ticketType->sold;
+                $totalSold = $event->ticketTypes->sum('sold');
+                $totalCapacity = $event->capacity ?? $event->ticketTypes->sum('quantity');
+                $remainingEvent = max($totalCapacity - $totalSold, 0);
+                if ($availableType < $qty || $remainingEvent < $qty) {
+                    abort(422, 'Event full or not enough tickets available');
                 }
                 $order = Order::create([
                     'user_id' => $user->id,
                     'vendor_profile_id' => $event->vendorProfile->id,
                     'total' => $qty * $ticketType->price,
-                    'status' => 'reserved',
+                    'status' => 'paid',
                     'reserved_at' => now(),
+                    'paid_at' => now(),
                 ]);
                 $item = OrderItem::create([
                     'order_id' => $order->id,
@@ -60,9 +64,9 @@ class OrderController extends Controller
                 }
             });
         } catch (\Throwable $e) {
-            return back()->withErrors(['reserve' => $e->getMessage()]);
+            return back()->withErrors(['buy' => $e->getMessage()]);
         }
 
-        return redirect()->route('events.show', $event->slug)->with('status', 'Reserved successfully');
+        return redirect()->route('events.show', $event->slug)->with('status', 'Tickets purchased successfully');
     }
 }

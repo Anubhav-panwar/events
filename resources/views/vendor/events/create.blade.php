@@ -36,17 +36,22 @@
                                 <label class="block">End Time</label>
                                 <input type="time" name="end_time" value="{{ old('end_time') }}" class="w-full border rounded p-2"/>
                                 @error('end_time')<div class="text-red-600">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block">Address</label>
-                                <input name="address" value="{{ old('address') }}" class="w-full border rounded p-2"/>
-                                @error('address')<div class="text-red-600">{{ $message }}</div>@enderror
-                            </div>
-                            <div>
-                                <label class="block">Latitude</label>
-                                <input name="latitude" value="{{ old('latitude') }}" class="w-full border rounded p-2"/>
-                                @error('latitude')<div class="text-red-600">{{ $message }}</div>@enderror
-                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block">Address</label>
+                            <input name="address" value="{{ old('address') }}" class="w-full border rounded p-2"/>
+                            @error('address')<div class="text-red-600">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label class="block">Capacity (max persons)</label>
+                            <input type="number" min="0" name="capacity" value="{{ old('capacity') }}" class="w-full border rounded p-2"/>
+                            @error('capacity')<div class="text-red-600">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label class="block">Latitude</label>
+                            <input name="latitude" value="{{ old('latitude') }}" class="w-full border rounded p-2"/>
+                            @error('latitude')<div class="text-red-600">{{ $message }}</div>@enderror
+                        </div>
                             <div>
                                 <label class="block">Longitude</label>
                                 <input name="longitude" value="{{ old('longitude') }}" class="w-full border rounded p-2"/>

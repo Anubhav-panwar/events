@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/events/create', [VendorEventController::class, 'create'])->name('events.create');
         Route::post('/events', [VendorEventController::class, 'store'])->name('events.store');
         Route::get('/events/{event}/edit', [VendorEventController::class, 'edit'])->name('events.edit');
+        Route::get('/orders', [\App\Http\Controllers\Vendor\VendorOrderController::class, 'index'])->name('orders.index');
     });
 });
 
@@ -33,10 +34,16 @@ Route::get('/vendors', [VendorListController::class, 'index'])->name('vendors.in
 Route::get('/vendors/{slug}', [\App\Http\Controllers\Vendor\VendorPublicController::class, 'show'])->name('vendors.show');
 Route::get('/e/{slug}', [EventController::class, 'show'])->name('events.show');
 Route::get('/e/{slug}/ics', [\App\Http\Controllers\EventCalendarController::class, 'ics'])->name('events.ics');
-Route::post('/e/{slug}/reserve', [\App\Http\Controllers\OrderController::class, 'reserve'])->middleware('auth')->name('orders.reserve');
+Route::post('/e/{slug}/buy', [\App\Http\Controllers\OrderController::class, 'buy'])->middleware('auth')->name('orders.buy');
 Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('search');
 Route::get('/events', [\App\Http\Controllers\SearchController::class, 'index'])->name('events.index');
 Route::get('/contact', fn() => view('contact'))->name('contact');
+Route::view('/about', 'pages.about')->name('about');
+Route::view('/services', 'pages.services')->name('services');
+Route::view('/pricing', 'pages.pricing')->name('pricing');
+Route::view('/portfolio', 'pages.portfolio')->name('portfolio');
+Route::view('/testimonials', 'pages.testimonials')->name('testimonials');
+Route::view('/faq', 'pages.faq')->name('faq');
 
 Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {

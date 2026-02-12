@@ -48,11 +48,11 @@
                 <div class="mt-5 flex flex-wrap gap-3 items-center">
                     <span class="text-sm text-slate-600">Share:</span>
                     @php $url = route('events.show', $event->slug); @endphp
-                    <a class="text-blue-600 text-sm" target="_blank" href="https://wa.me/?text={{ urlencode($event->title.' '.$url) }}">WhatsApp</a>
-                    <a class="text-blue-600 text-sm" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($url) }}">Facebook</a>
-                    <a class="text-blue-600 text-sm" target="_blank" href="https://twitter.com/intent/tweet?text={{ urlencode($event->title) }}&url={{ urlencode($url) }}">X</a>
-                    <a class="text-blue-600 text-sm" target="_blank" href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($url) }}">LinkedIn</a>
-                    <button class="text-blue-600 text-sm" onclick="navigator.clipboard.writeText('{{ $url }}')">Copy Link</button>
+                    <a class="text-emerald-700 text-sm hover:text-emerald-800" target="_blank" href="https://wa.me/?text={{ urlencode($event->title.' '.$url) }}">WhatsApp</a>
+                    <a class="text-emerald-700 text-sm hover:text-emerald-800" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($url) }}">Facebook</a>
+                    <a class="text-emerald-700 text-sm hover:text-emerald-800" target="_blank" href="https://twitter.com/intent/tweet?text={{ urlencode($event->title) }}&url={{ urlencode($url) }}">X</a>
+                    <a class="text-emerald-700 text-sm hover:text-emerald-800" target="_blank" href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($url) }}">LinkedIn</a>
+                    <button class="text-emerald-700 text-sm hover:text-emerald-800" onclick="navigator.clipboard.writeText('{{ $url }}')">Copy Link</button>
                 </div>
 
                 @auth
@@ -65,14 +65,27 @@
 
             @if($event->ticketTypes->count())
                 <div class="surface p-6">
-                    <h3 class="text-lg font-semibold text-slate-900 mb-3">Reserve Tickets</h3>
-                    <form method="POST" action="{{ route('orders.reserve', $event->slug) }}" class="flex flex-col md:flex-row md:items-end gap-3">
+                    @php
+                        $remainingTotal = max(($event->ticketTypes->sum('quantity') ?? 0) - ($event->ticketTypes->sum('sold') ?? 0), 0);
+                        if($event->capacity){
+                            $remainingTotal = min($remainingTotal, max($event->capacity - $event->ticketTypes->sum('sold'), 0));
+                        }
+                    @endphp
+                    <div class="mb-2">
+                        @if($remainingTotal <= 0)
+                            <span class="badge bg-red-100 text-red-700">Event Full</span>
+                        @else
+                            <span class="text-sm text-slate-600">{{ $remainingTotal }} seats left</span>
+                        @endif
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-900 mb-3">Buy Tickets</h3>
+                    <form method="POST" action="{{ route('orders.buy', $event->slug) }}" class="flex flex-col md:flex-row md:items-end gap-3">
                         @csrf
                         <div class="flex-1">
                             <label class="block mb-1 text-sm text-slate-700">Ticket Type</label>
                             <select name="ticket_type_id" class="input-field">
                                 @foreach($event->ticketTypes as $t)
-                                    <option value="{{ $t->id }}">{{ $t->name }} - {{ $t->price }} {{ $t->currency }} ({{ max($t->quantity - $t->sold, 0) }} left)</option>
+                                    <option value="{{ $t->id }}">{{ $t->name }} - {{ number_format($t->price, 2) }} {{ $t->currency }} ({{ max($t->quantity - $t->sold, 0) }} left)</option>
                                 @endforeach
                             </select>
                             @error('ticket_type_id')<div class="text-red-600 text-sm mt-1">{{ $message }}</div>@enderror
@@ -82,7 +95,7 @@
                             <input type="number" min="1" name="quantity" value="1" class="input-field">
                             @error('quantity')<div class="text-red-600 text-sm mt-1">{{ $message }}</div>@enderror
                         </div>
-                        <button class="btn-primary">Reserve</button>
+                        <button class="btn-primary" @if($remainingTotal <= 0) disabled @endif>Buy Ticket</button>
                     </form>
                 </div>
             @endif

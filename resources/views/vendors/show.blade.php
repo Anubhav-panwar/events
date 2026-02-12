@@ -27,10 +27,10 @@
                 </div>
                 @endif
                 <div class="mt-5 flex flex-wrap gap-3">
-                    @if($vendor->website)<a class="text-blue-600" href="{{ $vendor->website }}" target="_blank">Website</a>@endif
-                    @if($vendor->instagram)<a class="text-blue-600" href="{{ $vendor->instagram }}" target="_blank">Instagram</a>@endif
-                    @if($vendor->facebook)<a class="text-blue-600" href="{{ $vendor->facebook }}" target="_blank">Facebook</a>@endif
-                    @if($vendor->twitter)<a class="text-blue-600" href="{{ $vendor->twitter }}" target="_blank">Twitter</a>@endif
+                    @if($vendor->website)<a class="text-emerald-700 hover:text-emerald-800" href="{{ $vendor->website }}" target="_blank">Website</a>@endif
+                    @if($vendor->instagram)<a class="text-emerald-700 hover:text-emerald-800" href="{{ $vendor->instagram }}" target="_blank">Instagram</a>@endif
+                    @if($vendor->facebook)<a class="text-emerald-700 hover:text-emerald-800" href="{{ $vendor->facebook }}" target="_blank">Facebook</a>@endif
+                    @if($vendor->twitter)<a class="text-emerald-700 hover:text-emerald-800" href="{{ $vendor->twitter }}" target="_blank">Twitter</a>@endif
                 </div>
             </div>
             <div class="surface p-6">

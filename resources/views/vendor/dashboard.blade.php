@@ -2,7 +2,10 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl">Vendor Dashboard</h2>
-            <a href="{{ route('vendor.events.create') }}" class="btn-primary">New Event</a>
+            <div class="flex gap-2">
+                <a href="{{ route('vendor.events.create') }}" class="btn-primary">New Event</a>
+                <a href="{{ route('vendor.orders.index') }}" class="btn-secondary">View Orders</a>
+            </div>
         </div>
     </x-slot>
     <div class="py-6">
@@ -23,7 +26,7 @@
                     @forelse($events ?? [] as $event)
                         <div class="flex justify-between border rounded p-2">
                             <div>
-                                <a class="text-blue-600" href="{{ route('events.show', $event->slug) }}">{{ $event->title }}</a>
+                                <a class="text-emerald-700 hover:text-emerald-800" href="{{ route('events.show', $event->slug) }}">{{ $event->title }}</a>
                                 <div class="text-gray-600">{{ $event->event_date->format('Y-m-d') }} • {{ $event->status }}</div>
                             </div>
                             <a class="btn-secondary" href="{{ route('vendor.events.edit', $event) }}">Edit</a>
