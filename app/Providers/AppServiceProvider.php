@@ -25,6 +25,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->isProduction()) {
+            $hotFile = public_path('hot');
+            if (is_file($hotFile)) {
+                @unlink($hotFile);
+            }
+        }
+
         Schema::defaultStringLength(191);
         Gate::define('admin', fn($user) => $user->isAdmin());
         Gate::define('vendor', fn($user) => $user->isVendor());
