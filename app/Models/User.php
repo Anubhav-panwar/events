@@ -67,6 +67,16 @@ class User extends Authenticatable
         return $this->belongsToMany(VendorProfile::class, 'vendor_follows');
     }
 
+    public function eventReminders()
+    {
+        return $this->hasMany(EventReminder::class);
+    }
+
+    public function referredOrders()
+    {
+        return $this->hasMany(Order::class, 'referred_by_user_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

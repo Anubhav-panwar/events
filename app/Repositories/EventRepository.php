@@ -21,6 +21,6 @@ class EventRepository
 
     public function findBySlug(string $slug): ?Event
     {
-        return Event::with(['vendorProfile', 'media', 'ticketTypes', 'category'])->firstWhere('slug', $slug);
+        return Event::with(['vendorProfile.media', 'media', 'ticketTypes', 'category'])->firstWhere('slug', $slug);
     }
 }

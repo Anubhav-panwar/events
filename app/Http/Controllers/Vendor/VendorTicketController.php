@@ -28,7 +28,17 @@ class VendorTicketController extends Controller
             'sales_end' => ['nullable', 'date', 'after_or_equal:sales_start'],
         ]);
         $data['event_id'] = $event->id;
-        TicketType::create($data);
+        $ticketType = TicketType::create($data);
+
+        if ($event->event_type !== 'paid') {
+            $event->update([
+                'event_type' => 'paid',
+                'base_price' => $ticketType->price,
+            ]);
+        } elseif ($event->base_price === null || $ticketType->price < $event->base_price) {
+            $event->update(['base_price' => $ticketType->price]);
+        }
+
         return redirect()->route('vendor.events.edit', $event)->with('status', 'Ticket type created');
     }
 }

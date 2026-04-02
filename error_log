@@ -1,0 +1,35 @@
+[12-Feb-2026 15:38:48 UTC] PHP Warning:  require(/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:38:48 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/topplace/tutionstime.topplaced.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:38:50 UTC] PHP Warning:  require(/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:38:50 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/topplace/tutionstime.topplaced.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:39:00 UTC] PHP Warning:  require(/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:39:00 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/topplace/tutionstime.topplaced.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:39:26 UTC] PHP Warning:  require(/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:39:26 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/topplace/tutionstime.topplaced.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:41:09 UTC] PHP Warning:  require(/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:41:09 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/topplace/tutionstime.topplaced.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:41:36 UTC] PHP Warning:  require(/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:41:36 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/topplace/tutionstime.topplaced.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:44:48 UTC] PHP Warning:  require(/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/topplace/tutionstime.topplaced.com/index.php on line 14
+[12-Feb-2026 15:44:48 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/topplace/tutionstime.topplaced.com/../vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/topplace/tutionstime.topplaced.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/topplace/tutionstime.topplaced.com/index.php on line 14

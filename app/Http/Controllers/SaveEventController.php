@@ -11,6 +11,7 @@ class SaveEventController extends Controller
     {
         $event = Event::firstWhere('slug', $slug);
         abort_unless($event, 404);
+        $this->authorize('view', $event);
         $request->user()->savedEvents()->syncWithoutDetaching([$event->id]);
         return back()->with('status', 'Event saved');
     }
@@ -19,6 +20,7 @@ class SaveEventController extends Controller
     {
         $event = Event::firstWhere('slug', $slug);
         abort_unless($event, 404);
+        $this->authorize('view', $event);
         $request->user()->savedEvents()->detach($event->id);
         return back()->with('status', 'Event removed from saved');
     }

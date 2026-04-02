@@ -12,8 +12,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Sora', ...defaultTheme.fontFamily.sans],
-                display: ['Fraunces', ...defaultTheme.fontFamily.serif],
+                sans: ['Ubuntu', ...defaultTheme.fontFamily.sans],
+                display: ['Ubuntu', ...defaultTheme.fontFamily.sans],
             },
         },
     },

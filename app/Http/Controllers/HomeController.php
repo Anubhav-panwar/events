@@ -11,20 +11,33 @@ class HomeController extends Controller
     public function index()
     {
         $categories = Category::orderBy('name')->get();
-        $upcoming = Event::query()
+        $upcomingQuery = Event::query()
             ->where('status', 'published')
             ->whereDate('event_date', '>=', now()->toDateString())
-            ->with(['media', 'vendorProfile'])
+            ->with(['media', 'vendorProfile', 'ticketTypes'])
             ->orderBy('event_date')
             ->limit(9)
-            ->get();
+            ;
 
-        $featured = Event::query()
+        $featuredQuery = Event::query()
             ->where('status', 'published')
-            ->with(['media', 'vendorProfile'])
+            ->where('is_featured', true)
+            ->with(['media', 'vendorProfile', 'ticketTypes'])
             ->latest('event_date')
-            ->limit(3)
-            ->get();
+            ->limit(3);
+
+        if (auth()->check()) {
+            $upcomingQuery->withExists([
+                'saves as is_saved' => fn ($q) => $q->where('users.id', auth()->id()),
+            ]);
+            $featuredQuery->withExists([
+                'saves as is_saved' => fn ($q) => $q->where('users.id', auth()->id()),
+            ]);
+        }
+
+        $upcoming = $upcomingQuery->get();
+
+        $featured = $featuredQuery->get();
 
         $popularCities = VendorProfile::query()
             ->where('is_approved', true)

@@ -13,7 +13,7 @@ class VendorRepository
             ->where('is_approved', true)
             ->whereNotNull('slug')
             ->where('slug', '!=', '')
-            ->with('categories')
+            ->with(['categories', 'media'])
             ->paginate($perPage);
     }
 
@@ -24,13 +24,18 @@ class VendorRepository
 
     public function createOrUpdate(User $user, array $data): VendorProfile
     {
+        $categoryIds = $data['category_ids'] ?? null;
+        unset($data['category_ids'], $data['media']);
+
         $profile = VendorProfile::updateOrCreate(
             ['user_id' => $user->id],
             $data
         );
-        if (isset($data['category_ids'])) {
-            $profile->categories()->sync($data['category_ids']);
+
+        if (is_array($categoryIds)) {
+            $profile->categories()->sync($categoryIds);
         }
+
         return $profile;
     }
 }

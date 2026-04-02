@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class VendorProfile extends Model
 {
@@ -35,6 +36,24 @@ class VendorProfile extends Model
         'is_approved' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (VendorProfile $profile) {
+            if (filled($profile->slug)) {
+                return;
+            }
+
+            $base = Str::slug($profile->business_name ?: 'vendor');
+            $slug = $base;
+            $counter = 1;
+            while (static::query()->where('slug', $slug)->when($profile->exists, fn($q) => $q->where('id', '!=', $profile->id))->exists()) {
+                $counter++;
+                $slug = "{$base}-{$counter}";
+            }
+            $profile->slug = $slug;
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -53,5 +72,10 @@ class VendorProfile extends Model
     public function followers()
     {
         return $this->belongsToMany(User::class, 'vendor_follows');
+    }
+
+    public function media()
+    {
+        return $this->hasMany(VendorMedia::class);
     }
 }

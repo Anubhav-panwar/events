@@ -20,7 +20,7 @@ class VendorProfileController extends Controller
     {
         $user = $request->user();
         Gate::authorize('vendor');
-        $profile = $this->repo->findByUser($user);
+        $profile = $this->repo->findByUser($user)?->load(['categories', 'media']);
         $categories = Category::all();
         return view('vendor.profile.edit', compact('profile', 'categories'));
     }
@@ -29,7 +29,7 @@ class VendorProfileController extends Controller
     {
         $user = $request->user();
         Gate::authorize('vendor');
-        $profile = $this->service->getOrCreateProfile($user, $request->validated());
+        $profile = $this->service->getOrCreateProfile($user, $request->validated(), $request->file('media', []));
         return redirect()->route('vendor.profile.edit')->with('status', 'Profile saved');
     }
 }

@@ -81,4 +81,19 @@ class Event extends Model
     {
         return $this->belongsToMany(User::class, 'event_saves');
     }
+
+    public function shareClicks()
+    {
+        return $this->hasMany(EventShareClick::class);
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(EventReferral::class);
+    }
+
+    public function reminders()
+    {
+        return $this->hasMany(EventReminder::class);
+    }
 }

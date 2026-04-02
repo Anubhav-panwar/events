@@ -11,6 +11,7 @@ class FollowVendorController extends Controller
     {
         $vendor = VendorProfile::firstWhere('slug', $slug);
         abort_unless($vendor, 404);
+        $this->authorize('view', $vendor);
         $request->user()->followedVendors()->syncWithoutDetaching([$vendor->id]);
         return back()->with('status', 'Followed vendor');
     }
@@ -19,6 +20,7 @@ class FollowVendorController extends Controller
     {
         $vendor = VendorProfile::firstWhere('slug', $slug);
         abort_unless($vendor, 404);
+        $this->authorize('view', $vendor);
         $request->user()->followedVendors()->detach($vendor->id);
         return back()->with('status', 'Unfollowed vendor');
     }
