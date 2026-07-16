@@ -5,6 +5,12 @@
     $isAdmin = $currentUser?->isAdmin() ?? false;
     $hasAccountSavedRoute = \Illuminate\Support\Facades\Route::has('account.saved');
     $hasAccountTicketsRoute = \Illuminate\Support\Facades\Route::has('account.tickets.index');
+    $hasVendorDashboardRoute = \Illuminate\Support\Facades\Route::has('vendor.dashboard');
+    $hasVendorEventsCreateRoute = \Illuminate\Support\Facades\Route::has('vendor.events.create');
+    $hasVendorOrdersRoute = \Illuminate\Support\Facades\Route::has('vendor.orders.index');
+    $hasVendorCheckinRoute = \Illuminate\Support\Facades\Route::has('vendor.checkin.form');
+    $hasVendorProfileRoute = \Illuminate\Support\Facades\Route::has('vendor.profile.edit');
+    $hasAdminDashboardRoute = \Illuminate\Support\Facades\Route::has('admin.dashboard');
 @endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-slate-200 fixed top-0 inset-x-0 z-50 transition-all duration-300">
 
@@ -51,22 +57,30 @@
 
                         {{-- Vendor links --}}
                         @if($isVendor)
-                            <x-nav-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">
-                                Dashboard
-                            </x-nav-link>
-                            <x-nav-link :href="route('vendor.events.create')" :active="request()->routeIs('vendor.events.create')">
-                                New Event
-                            </x-nav-link>
-                            <x-nav-link :href="route('vendor.orders.index')" :active="request()->routeIs('vendor.orders.*')">
-                                Orders
-                            </x-nav-link>
-                            <x-nav-link :href="route('vendor.checkin.form')" :active="request()->routeIs('vendor.checkin.*')">
-                                Check-In
-                            </x-nav-link>
+                            @if($hasVendorDashboardRoute)
+                                <x-nav-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">
+                                    Dashboard
+                                </x-nav-link>
+                            @endif
+                            @if($hasVendorEventsCreateRoute)
+                                <x-nav-link :href="route('vendor.events.create')" :active="request()->routeIs('vendor.events.create')">
+                                    New Event
+                                </x-nav-link>
+                            @endif
+                            @if($hasVendorOrdersRoute)
+                                <x-nav-link :href="route('vendor.orders.index')" :active="request()->routeIs('vendor.orders.*')">
+                                    Orders
+                                </x-nav-link>
+                            @endif
+                            @if($hasVendorCheckinRoute)
+                                <x-nav-link :href="route('vendor.checkin.form')" :active="request()->routeIs('vendor.checkin.*')">
+                                    Check-In
+                                </x-nav-link>
+                            @endif
                         @endif
 
                         {{-- Admin links --}}
-                        @if($isAdmin)
+                        @if($isAdmin && $hasAdminDashboardRoute)
                             <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                                 Admin
                             </x-nav-link>
@@ -106,10 +120,12 @@
                                 My Profile
                             </x-dropdown-link>
                             @if($isVendor)
-                                <x-dropdown-link :href="route('vendor.profile.edit')">
-                                    Vendor Profile
-                                </x-dropdown-link>
-                            @elseif($isAdmin)
+                                @if($hasVendorProfileRoute)
+                                    <x-dropdown-link :href="route('vendor.profile.edit')">
+                                        Vendor Profile
+                                    </x-dropdown-link>
+                                @endif
+                            @elseif($isAdmin && $hasAdminDashboardRoute)
                                 <x-dropdown-link :href="route('admin.dashboard')">
                                     Admin Dashboard
                                 </x-dropdown-link>
@@ -172,13 +188,23 @@
                         @endif
                     @endif
                     @if($isVendor)
-                        <x-responsive-nav-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">Dashboard</x-responsive-nav-link>
-                        <x-responsive-nav-link :href="route('vendor.events.create')">New Event</x-responsive-nav-link>
-                        <x-responsive-nav-link :href="route('vendor.orders.index')" :active="request()->routeIs('vendor.orders.*')">Orders</x-responsive-nav-link>
-                        <x-responsive-nav-link :href="route('vendor.checkin.form')" :active="request()->routeIs('vendor.checkin.*')">QR Check-In</x-responsive-nav-link>
-                        <x-responsive-nav-link :href="route('vendor.profile.edit')">Vendor Profile</x-responsive-nav-link>
+                        @if($hasVendorDashboardRoute)
+                            <x-responsive-nav-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">Dashboard</x-responsive-nav-link>
+                        @endif
+                        @if($hasVendorEventsCreateRoute)
+                            <x-responsive-nav-link :href="route('vendor.events.create')">New Event</x-responsive-nav-link>
+                        @endif
+                        @if($hasVendorOrdersRoute)
+                            <x-responsive-nav-link :href="route('vendor.orders.index')" :active="request()->routeIs('vendor.orders.*')">Orders</x-responsive-nav-link>
+                        @endif
+                        @if($hasVendorCheckinRoute)
+                            <x-responsive-nav-link :href="route('vendor.checkin.form')" :active="request()->routeIs('vendor.checkin.*')">QR Check-In</x-responsive-nav-link>
+                        @endif
+                        @if($hasVendorProfileRoute)
+                            <x-responsive-nav-link :href="route('vendor.profile.edit')">Vendor Profile</x-responsive-nav-link>
+                        @endif
                     @endif
-                    @if($isAdmin)
+                    @if($isAdmin && $hasAdminDashboardRoute)
                         <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">Admin Panel</x-responsive-nav-link>
                     @endif
                 </div>
