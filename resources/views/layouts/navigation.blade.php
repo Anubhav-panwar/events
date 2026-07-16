@@ -1,4 +1,11 @@
 {{-- Role-aware Navigation: Guest / User / Vendor / Admin --}}
+@php
+    $currentUser = auth()->user();
+    $isVendor = $currentUser?->isVendor() ?? false;
+    $isAdmin = $currentUser?->isAdmin() ?? false;
+    $hasAccountSavedRoute = \Illuminate\Support\Facades\Route::has('account.saved');
+    $hasAccountTicketsRoute = \Illuminate\Support\Facades\Route::has('account.tickets.index');
+@endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-slate-200 fixed top-0 inset-x-0 z-50 transition-all duration-300">
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,17 +36,21 @@
 
                     @auth
                         {{-- User-only links --}}
-                        @if(!auth()->user()->isVendor() && !auth()->user()->isAdmin())
-                            <x-nav-link :href="route('account.saved')" :active="request()->routeIs('account.saved')">
-                                Saved
-                            </x-nav-link>
-                            <x-nav-link :href="route('account.tickets.index')" :active="request()->routeIs('account.tickets.*')">
-                                My Tickets
-                            </x-nav-link>
+                        @if(!$isVendor && !$isAdmin)
+                            @if($hasAccountSavedRoute)
+                                <x-nav-link :href="route('account.saved')" :active="request()->routeIs('account.saved')">
+                                    Saved
+                                </x-nav-link>
+                            @endif
+                            @if($hasAccountTicketsRoute)
+                                <x-nav-link :href="route('account.tickets.index')" :active="request()->routeIs('account.tickets.*')">
+                                    My Tickets
+                                </x-nav-link>
+                            @endif
                         @endif
 
                         {{-- Vendor links --}}
-                        @if(auth()->user()->isVendor())
+                        @if($isVendor)
                             <x-nav-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">
                                 Dashboard
                             </x-nav-link>
@@ -55,7 +66,7 @@
                         @endif
 
                         {{-- Admin links --}}
-                        @if(auth()->user()->isAdmin())
+                        @if($isAdmin)
                             <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                                 Admin
                             </x-nav-link>
@@ -70,9 +81,9 @@
             <div class="hidden sm:flex sm:items-center sm:gap-4">
                 @auth
                     {{-- Role badge --}}
-                    @if(auth()->user()->isVendor())
+                    @if($isVendor)
                         <span class="badge-emerald">Vendor</span>
-                    @elseif(auth()->user()->isAdmin())
+                    @elseif($isAdmin)
                         <span class="badge">Admin</span>
                     @endif
 
@@ -94,17 +105,25 @@
                             <x-dropdown-link :href="route('profile.edit')">
                                 My Profile
                             </x-dropdown-link>
-                            @if(auth()->user()->isVendor())
+                            @if($isVendor)
                                 <x-dropdown-link :href="route('vendor.profile.edit')">
                                     Vendor Profile
                                 </x-dropdown-link>
+                            @elseif($isAdmin)
+                                <x-dropdown-link :href="route('admin.dashboard')">
+                                    Admin Dashboard
+                                </x-dropdown-link>
                             @else
-                                <x-dropdown-link :href="route('account.saved')">
-                                    Saved Events
-                                </x-dropdown-link>
-                                <x-dropdown-link :href="route('account.tickets.index')">
-                                    My Tickets
-                                </x-dropdown-link>
+                                @if($hasAccountSavedRoute)
+                                    <x-dropdown-link :href="route('account.saved')">
+                                        Saved Events
+                                    </x-dropdown-link>
+                                @endif
+                                @if($hasAccountTicketsRoute)
+                                    <x-dropdown-link :href="route('account.tickets.index')">
+                                        My Tickets
+                                    </x-dropdown-link>
+                                @endif
                             @endif
                             <div class="border-t border-slate-100 mt-1">
                                 <form method="POST" action="{{ route('logout') }}">
@@ -144,18 +163,22 @@
 
             @auth
                 <div class="border-t border-slate-100 pt-2 mt-2">
-                    @if(!auth()->user()->isVendor() && !auth()->user()->isAdmin())
-                        <x-responsive-nav-link :href="route('account.saved')" :active="request()->routeIs('account.saved')">Saved Events</x-responsive-nav-link>
-                        <x-responsive-nav-link :href="route('account.tickets.index')" :active="request()->routeIs('account.tickets.*')">My Tickets</x-responsive-nav-link>
+                    @if(!$isVendor && !$isAdmin)
+                        @if($hasAccountSavedRoute)
+                            <x-responsive-nav-link :href="route('account.saved')" :active="request()->routeIs('account.saved')">Saved Events</x-responsive-nav-link>
+                        @endif
+                        @if($hasAccountTicketsRoute)
+                            <x-responsive-nav-link :href="route('account.tickets.index')" :active="request()->routeIs('account.tickets.*')">My Tickets</x-responsive-nav-link>
+                        @endif
                     @endif
-                    @if(auth()->user()->isVendor())
+                    @if($isVendor)
                         <x-responsive-nav-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">Dashboard</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('vendor.events.create')">New Event</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('vendor.orders.index')" :active="request()->routeIs('vendor.orders.*')">Orders</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('vendor.checkin.form')" :active="request()->routeIs('vendor.checkin.*')">QR Check-In</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('vendor.profile.edit')">Vendor Profile</x-responsive-nav-link>
                     @endif
-                    @if(auth()->user()->isAdmin())
+                    @if($isAdmin)
                         <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">Admin Panel</x-responsive-nav-link>
                     @endif
                 </div>
