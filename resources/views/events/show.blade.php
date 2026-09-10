@@ -25,6 +25,13 @@
         $remainingTotal = max(($event->ticketTypes->sum('quantity') ?? 0) - ($event->ticketTypes->sum('sold') ?? 0), 0);
         if($event->capacity){ $remainingTotal = min($remainingTotal, max($event->capacity - $event->ticketTypes->sum('sold'), 0)); }
         $channels = ['whatsapp' => ['label'=>'WhatsApp','icon'=>'💬','color'=>'bg-green-500'], 'facebook' => ['label'=>'Facebook','icon'=>'👥','color'=>'bg-blue-600'], 'x' => ['label'=>'X','icon'=>'𝕏','color'=>'bg-black'], 'linkedin' => ['label'=>'LinkedIn','icon'=>'in','color'=>'bg-blue-700']];
+        $hasShareRoute = \Illuminate\Support\Facades\Route::has('events.share');
+        $hasIcsRoute = \Illuminate\Support\Facades\Route::has('events.ics');
+        $hasSaveRoute = \Illuminate\Support\Facades\Route::has('events.save');
+        $hasUnsaveRoute = \Illuminate\Support\Facades\Route::has('events.unsave');
+        $hasReminderStoreRoute = \Illuminate\Support\Facades\Route::has('events.reminders.store');
+        $hasReminderDestroyRoute = \Illuminate\Support\Facades\Route::has('events.reminders.destroy');
+        $hasOrdersBuyRoute = \Illuminate\Support\Facades\Route::has('orders.buy');
     @endphp
 
     {{-- Hero --}}
@@ -168,7 +175,7 @@
                                 Save to Calendar
                             </h3>
                             <div class="flex flex-wrap gap-3">
-                                <a href="{{ route('events.ics', $event->slug) }}" class="btn-secondary text-sm">
+                                <a href="{{ $hasIcsRoute ? route('events.ics', $event->slug) : url('/e/'.$event->slug.'/ics') }}" class="btn-secondary text-sm">
                                     Download .ICS (iPhone/Android/Outlook)
                                 </a>
                                 <a href="{{ $googleUrl }}" target="_blank" rel="noopener" class="btn-primary text-sm">
@@ -185,14 +192,20 @@
                             </h3>
                             <div class="flex flex-wrap gap-2">
                                 @foreach($channels as $key => $channel)
-                                    <a href="{{ route('events.share', ['slug' => $event->slug, 'channel' => $key]) }}"
+                                    @php
+                                        $channelShareUrl = $hasShareRoute ? route('events.share', ['slug' => $event->slug, 'channel' => $key]) : url('/e/'.$event->slug.'/share/'.$key);
+                                    @endphp
+                                    <a href="{{ $channelShareUrl }}"
                                        target="_blank"
                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium {{ $channel['color'] }} hover:opacity-90 transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md">
                                         <span>{{ $channel['icon'] }}</span>
                                         {{ $channel['label'] }}
                                     </a>
                                 @endforeach
-                                <button id="copyShareBtn" data-url="{{ route('events.share', ['slug' => $event->slug, 'channel' => 'copy']) }}"
+                                @php
+                                    $copyShareUrl = $hasShareRoute ? route('events.share', ['slug' => $event->slug, 'channel' => 'copy']) : url('/e/'.$event->slug.'/share/copy');
+                                @endphp
+                                <button id="copyShareBtn" data-url="{{ $copyShareUrl }}"
                                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-slate-700 text-sm font-medium bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
                                     Copy Link
@@ -210,7 +223,7 @@
                         @auth
                             <div class="border-t border-slate-100 pt-5 flex flex-wrap gap-3">
                                 @if($isSaved)
-                                    <form method="POST" action="{{ route('events.unsave', $event->slug) }}">
+                                    <form method="POST" action="{{ $hasUnsaveRoute ? route('events.unsave', $event->slug) : url('/events/'.$event->slug.'/save') }}">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn-secondary text-sm">
@@ -219,7 +232,7 @@
                                         </button>
                                     </form>
                                 @else
-                                    <form method="POST" action="{{ route('events.save', $event->slug) }}">
+                                    <form method="POST" action="{{ $hasSaveRoute ? route('events.save', $event->slug) : url('/events/'.$event->slug.'/save') }}">
                                         @csrf
                                         <button class="btn-primary text-sm">
                                             <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
@@ -228,7 +241,7 @@
                                     </form>
                                 @endif
 
-                                <form method="POST" action="{{ route('events.reminders.store', $event->slug) }}" class="flex gap-2">
+                                <form method="POST" action="{{ $hasReminderStoreRoute ? route('events.reminders.store', $event->slug) : url('/events/'.$event->slug.'/reminders') }}" class="flex gap-2">
                                     @csrf
                                     <select name="minutes_before" class="input-field py-2 text-sm">
                                         <option value="60" @selected(($reminder?->minutes_before ?? null) == 60)>1 hr before</option>
@@ -240,7 +253,7 @@
                                 </form>
 
                                 @if($reminder)
-                                    <form method="POST" action="{{ route('events.reminders.destroy', $event->slug) }}">
+                                    <form method="POST" action="{{ $hasReminderDestroyRoute ? route('events.reminders.destroy', $event->slug) : url('/events/'.$event->slug.'/reminders') }}">
                                         @csrf
                                         @method('DELETE')
                                         <button class="text-sm font-bold text-slate-500 hover:text-red-700 transition-colors">Remove Reminder</button>
@@ -318,7 +331,7 @@
                         @endif
 
                         @auth
-                            <form method="POST" action="{{ route('orders.buy', $event->slug) }}" class="space-y-3">
+                            <form method="POST" action="{{ $hasOrdersBuyRoute ? route('orders.buy', $event->slug) : url('/e/'.$event->slug.'/buy') }}" class="space-y-3">
                                 @csrf
 
                                 @if($event->ticketTypes->count())
