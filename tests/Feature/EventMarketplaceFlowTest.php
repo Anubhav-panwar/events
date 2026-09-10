@@ -219,4 +219,23 @@ class EventMarketplaceFlowTest extends TestCase
             ])
             ->assertSessionHasErrors('buy');
     }
+
+    public function test_storage_route_serves_files_and_event_media_url_resolves(): void
+    {
+        \Illuminate\Support\Facades\Storage::disk('public')->put('events/test_unit.jpg', 'image-content-here');
+
+        $response = $this->get('/storage/events/test_unit.jpg');
+        $response->assertOk();
+
+        $responseWithPrefix = $this->get('/storage/app/public/events/test_unit.jpg');
+        $responseWithPrefix->assertOk();
+
+        $resolved = \App\Models\EventMedia::resolveUrl('public', 'events/test_unit.jpg');
+        $this->assertStringContainsString('/storage/events/test_unit.jpg', $resolved);
+
+        $resolved2 = \App\Models\EventMedia::resolveUrl('public', 'app/public/events/test_unit.jpg');
+        $this->assertStringContainsString('/storage/events/test_unit.jpg', $resolved2);
+
+        \Illuminate\Support\Facades\Storage::disk('public')->delete('events/test_unit.jpg');
+    }
 }

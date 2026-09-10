@@ -59,6 +59,30 @@ Route::view('/portfolio', 'pages.portfolio')->name('portfolio');
 Route::view('/testimonials', 'pages.testimonials')->name('testimonials');
 Route::view('/faq', 'pages.faq')->name('faq');
 
+Route::get('/storage/{path}', function (string $path) {
+    $cleanPath = ltrim(preg_replace('#^app/public/#', '', $path), '/');
+    $baseDir = realpath(storage_path('app/public'));
+
+    $candidates = [
+        storage_path('app/public/' . $cleanPath),
+        public_path('storage/' . $cleanPath),
+    ];
+
+    foreach ($candidates as $candidate) {
+        $real = realpath($candidate);
+        if ($real && is_file($real)) {
+            $publicDir = realpath(public_path()) ?: '';
+            if (($baseDir && str_starts_with($real, $baseDir)) || ($publicDir && str_starts_with($real, $publicDir))) {
+                return response()->file($real, [
+                    'Cache-Control' => 'public, max-age=31536000',
+                ]);
+            }
+        }
+    }
+
+    abort(404);
+})->where('path', '.*')->name('storage.local');
+
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
     ->name('webhooks.stripe');
