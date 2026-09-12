@@ -445,17 +445,30 @@
                                 @error('ticket_type_id')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
                                 @error('quantity')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
 
-                                <button class="btn-primary w-full"
+                                <button class="btn-emerald w-full py-3 shadow-md shadow-emerald-950/20 font-bold flex items-center justify-center gap-2"
                                     @if($event->ticketTypes->count() && $remainingTotal <= 0) disabled @endif>
                                     @if($event->event_type === 'free')
-                                        Register Free
+                                        <span>Register Free</span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                     @else
-                                        Buy Ticket
+                                        <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        <span>Checkout with Stripe</span>
                                     @endif
                                 </button>
+
+                                <div class="pt-3 border-t border-slate-100 flex items-center justify-center gap-4 text-[11px] text-slate-500 font-medium">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                        Instant QR Ticket
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                                        Stripe Protected
+                                    </span>
+                                </div>
                             </form>
                         @else
-                            <a href="{{ route('login') }}" class="btn-primary w-full text-center block">Login to Book</a>
+                            <a href="{{ route('login') }}" class="btn-primary w-full text-center block py-3">Login to Book Tickets</a>
                         @endauth
                     </div>
                 </div>

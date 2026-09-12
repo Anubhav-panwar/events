@@ -191,8 +191,104 @@
                         </div>
                     </div>
                     @guest
-                        <a href="{{ route('register') }}" class="btn-emerald mt-8 w-full">Join as an Organizer</a>
+                        <a href="{{ route('register') }}" class="btn-emerald mt-8 w-full text-center block">Join as an Organizer</a>
                     @endguest
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- Host with Us Featured Banner --}}
+    <section class="py-14 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-950 text-white border-b border-slate-800 relative overflow-hidden">
+        <div class="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="app-content relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div class="max-w-2xl">
+                <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30 uppercase tracking-wider">
+                    For Event Hosts &amp; Venues
+                </span>
+                <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-3">
+                    Are You an Event Organizer? Scale Your Audience on Huddle.
+                </h3>
+                <p class="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
+                    Publish your listings in minutes, configure multiple ticket tiers, collect payments directly via Stripe, and scan tickets at the door with our mobile QR check-in tool.
+                </p>
+                <div class="mt-4 flex flex-wrap items-center gap-6 text-xs text-slate-300">
+                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> 0% Fees on Free Community Events</span>
+                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> Direct Stripe Payouts</span>
+                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> Real-Time Sales CRM</span>
+                </div>
+            </div>
+            <div class="shrink-0">
+                <a href="{{ route('register') }}" class="btn-emerald px-8 py-3.5 text-sm font-bold shadow-xl shadow-emerald-950/40 inline-flex items-center gap-2">
+                    <span>Create Organizer Profile</span>
+                    <span>&rarr;</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {{-- Community Testimonials & Social Proof --}}
+    <section class="section bg-white border-b border-slate-200">
+        <div class="app-content">
+            <div class="text-center max-w-2xl mx-auto mb-14">
+                <span class="brand-pill">Verified Reviews</span>
+                <h2 class="section-header mt-3">Loved by Attendees &amp; Organizers</h2>
+                <p class="section-subtitle">Real experiences from our active community members.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="surface p-7 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div>
+                        <div class="flex items-center gap-1 text-amber-400 text-sm mb-4">
+                            ★★★★★
+                        </div>
+                        <p class="text-slate-700 text-sm leading-relaxed italic">
+                            "The instant QR check-in made our festival entrance completely painless. Zero lines, zero paper. Booking tickets took under a minute with Apple Pay."
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
+                        <img class="w-10 h-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Marcus Vance">
+                        <div>
+                            <p class="text-xs font-bold text-slate-900">Marcus Vance</p>
+                            <p class="text-[11px] text-slate-500">Tech Summit Attendee &bull; San Francisco</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="surface p-7 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div>
+                        <div class="flex items-center gap-1 text-amber-400 text-sm mb-4">
+                            ★★★★★
+                        </div>
+                        <p class="text-slate-700 text-sm leading-relaxed italic">
+                            "As an indie jazz producer, Huddle's Stripe integration and ticket CRM allowed us to sell out 400 seats in 48 hours without paying exorbitant platform cuts."
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
+                        <img class="w-10 h-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80" alt="Elena Rostova">
+                        <div>
+                            <p class="text-xs font-bold text-slate-900">Elena Rostova</p>
+                            <p class="text-[11px] text-slate-500">Host, Jazz on the Water &bull; Boston</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="surface p-7 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div>
+                        <div class="flex items-center gap-1 text-amber-400 text-sm mb-4">
+                            ★★★★★
+                        </div>
+                        <p class="text-slate-700 text-sm leading-relaxed italic">
+                            "Finding high quality creative workshops used to take hours of scrolling. Huddle curates the best verified events and the calendar sync is brilliant."
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
+                        <img class="w-10 h-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80" alt="David Chen">
+                        <div>
+                            <p class="text-xs font-bold text-slate-900">David Chen</p>
+                            <p class="text-[11px] text-slate-500">Design Masterclass Attendee &bull; New York</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
