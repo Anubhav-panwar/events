@@ -1,6 +1,7 @@
 @props(['event'])
 @php
-    $image = $event->media->first();
+    $image = $event->media->where('type', 'image')->first();
+    $imageCount = $event->media->where('type', 'image')->count();
     $fallbackImages = [
         'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
         'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
@@ -8,7 +9,7 @@
         'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80',
     ];
     $fallbackIndex = abs(crc32((string) ($event->slug ?? $event->id ?? $event->title ?? 'event'))) % count($fallbackImages);
-    $imgUrl = $image ? Storage::disk($image->disk)->url($image->path) : $fallbackImages[$fallbackIndex];
+    $imgUrl = $image ? $image->url : $fallbackImages[$fallbackIndex];
 
     $price = $event->base_price;
     if ($price === null && $event->relationLoaded('ticketTypes')) {
@@ -21,15 +22,24 @@
 <div class="group">
     <div class="relative card card-hover">
         <a href="{{ route('events.show', $event->slug) }}" class="block">
-            <div class="relative overflow-hidden h-48">
-                <img src="{{ $imgUrl }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="{{ $event->title }}">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div class="relative overflow-hidden h-48 bg-slate-100">
+                <img src="{{ $imgUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $event->title }}" loading="lazy">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+
+                @if($imageCount > 1)
+                    <div class="absolute top-3 left-3">
+                        <span class="px-2.5 py-1 bg-slate-900/75 backdrop-blur-sm text-white text-[11px] font-bold rounded-full shadow flex items-center gap-1">
+                            <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {{ $imageCount }} photos
+                        </span>
+                    </div>
+                @endif
 
                 <div class="absolute top-3 right-3">
                     @if($price === null || (float) $price == 0)
-                        <span class="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full shadow-lg">FREE</span>
+                        <span class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full shadow-lg">FREE</span>
                     @else
-                        <span class="px-3 py-1 bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-bold rounded-full shadow-lg">${{ number_format((float) $price, 2) }}</span>
+                        <span class="px-3 py-1 bg-white/95 backdrop-blur-sm text-slate-900 text-xs font-bold rounded-full shadow-lg">${{ number_format((float) $price, 2) }}</span>
                     @endif
                 </div>
 

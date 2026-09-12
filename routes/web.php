@@ -17,6 +17,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::get('/dashboard', function () {
+    $user = auth()->user();
+    if ($user?->isAdmin()) {
+        return redirect()->route('admin.dashboard');
+    }
+    if ($user?->isVendor()) {
+        return redirect()->route('vendor.dashboard');
+    }
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -61,19 +68,27 @@ Route::view('/faq', 'pages.faq')->name('faq');
 
 Route::get('/storage/{path}', function (string $path) {
     $cleanPath = ltrim(preg_replace('#^app/public/#', '', $path), '/');
-    $baseDir = realpath(storage_path('app/public'));
+    $baseDir = realpath(storage_path('app/public')) ?: storage_path('app/public');
+    $publicDir = realpath(public_path()) ?: public_path();
 
     $candidates = [
         storage_path('app/public/' . $cleanPath),
         public_path('storage/' . $cleanPath),
+        base_path('storage/app/public/' . $cleanPath),
+        base_path('public/storage/' . $cleanPath),
     ];
 
     foreach ($candidates as $candidate) {
         $real = realpath($candidate);
         if ($real && is_file($real)) {
-            $publicDir = realpath(public_path()) ?: '';
-            if (($baseDir && str_starts_with($real, $baseDir)) || ($publicDir && str_starts_with($real, $publicDir))) {
+            $normReal = strtolower(str_replace('\\', '/', $real));
+            $normBase = strtolower(str_replace('\\', '/', $baseDir));
+            $normPublic = strtolower(str_replace('\\', '/', $publicDir));
+
+            if (str_starts_with($normReal, $normBase) || str_starts_with($normReal, $normPublic)) {
+                $mime = mime_content_type($real) ?: 'application/octet-stream';
                 return response()->file($real, [
+                    'Content-Type' => $mime,
                     'Cache-Control' => 'public, max-age=31536000',
                 ]);
             }

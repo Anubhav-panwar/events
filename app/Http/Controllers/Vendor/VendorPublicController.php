@@ -15,7 +15,7 @@ class VendorPublicController extends Controller
         $events = $vendor->events()
             ->where('status', 'published')
             ->whereDate('event_date', '>=', now()->toDateString())
-            ->with(['media', 'ticketTypes'])
+            ->with(['media', 'ticketTypes', 'vendorProfile'])
             ->orderBy('event_date')
             ->paginate(9);
 

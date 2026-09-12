@@ -18,12 +18,12 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Direct access to public storage files without booting PHP
+    # Direct access to public storage files without booting PHP (only if physical file exists)
+    RewriteCond %{DOCUMENT_ROOT}/public/storage/$1 -f
+    RewriteRule ^storage/(.*)$ public/storage/$1 [L]
+
     RewriteCond %{DOCUMENT_ROOT}/storage/app/public/$1 -f
     RewriteRule ^storage/(.*)$ storage/app/public/$1 [L]
-    RewriteRule ^storage/(events/.*)$ storage/app/public/$1 [L]
-    RewriteRule ^storage/(vendors/.*)$ storage/app/public/$1 [L]
-    RewriteRule ^storage/(avatars/.*)$ storage/app/public/$1 [L]
 
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d

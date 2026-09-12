@@ -19,6 +19,9 @@
     RewriteRule ^ %1 [L,R=301]
 
     # Direct access to public storage files without booting PHP
+    RewriteCond %{DOCUMENT_ROOT}/storage/$1 -f
+    RewriteRule ^storage/(.*)$ storage/$1 [L]
+
     RewriteCond %{DOCUMENT_ROOT}/../storage/app/public/$1 -f
     RewriteRule ^storage/(.*)$ ../storage/app/public/$1 [L]
 

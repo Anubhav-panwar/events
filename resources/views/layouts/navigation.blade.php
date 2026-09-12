@@ -94,11 +94,25 @@
             {{-- Right side --}}
             <div class="hidden sm:flex sm:items-center sm:gap-4">
                 @auth
-                    {{-- Role badge --}}
-                    @if($isVendor)
-                        <span class="badge-emerald">Vendor</span>
-                    @elseif($isAdmin)
-                        <span class="badge">Admin</span>
+                    {{-- Quick Portal Return Action in Top Right --}}
+                    @if($isAdmin && $hasAdminDashboardRoute)
+                        <a href="{{ route('admin.dashboard') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 shadow-sm transition-all group"
+                           title="Return to Admin Dashboard">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                            <span>Admin Dashboard</span>
+                            <span class="text-emerald-500 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+                        </a>
+                    @elseif($isVendor && $hasVendorDashboardRoute)
+                        <a href="{{ route('vendor.dashboard') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 shadow-sm transition-all group"
+                           title="Return to Vendor CRM">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                            <span>Vendor CRM</span>
+                            <span class="text-slate-500 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+                        </a>
                     @endif
 
                     <x-dropdown align="right" width="56">

@@ -11,6 +11,11 @@ export default {
 
     theme: {
         extend: {
+            colors: {
+                slate: {
+                    950: '#090d16',
+                },
+            },
             fontFamily: {
                 sans: ['Ubuntu', ...defaultTheme.fontFamily.sans],
                 display: ['Ubuntu', ...defaultTheme.fontFamily.sans],

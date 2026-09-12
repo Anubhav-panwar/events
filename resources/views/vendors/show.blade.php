@@ -18,7 +18,7 @@
     {{-- Hero Banner --}}
     <div class="relative h-60 md:h-80 overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-600">
         @if($coverImage)
-            <img src="{{ Storage::disk($coverImage->disk)->url($coverImage->path) }}" class="absolute inset-0 w-full h-full object-cover opacity-40" alt="">
+            <img src="{{ $coverImage->url }}" class="absolute inset-0 w-full h-full object-cover opacity-40" alt="">
         @else
             <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=60')] bg-cover bg-center opacity-25"></div>
         @endif
@@ -114,8 +114,8 @@
                             @if($allImages->count())
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                                     @foreach($allImages->take(6) as $m)
-                                        <div class="media-tile aspect-square cursor-pointer" onclick="openLightbox('{{ Storage::disk($m->disk)->url($m->path) }}')">
-                                            <img src="{{ Storage::disk($m->disk)->url($m->path) }}" alt="{{ $m->original_name ?? 'Gallery image' }}" loading="lazy">
+                                        <div class="media-tile aspect-square cursor-pointer" onclick="openLightbox('{{ $m->url }}')">
+                                            <img src="{{ $m->url }}" alt="{{ $m->original_name ?? 'Gallery image' }}" loading="lazy">
                                         </div>
                                     @endforeach
                                 </div>
@@ -123,7 +123,7 @@
                             @if($allVideos->count())
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     @foreach($allVideos as $m)
-                                        <video class="rounded-xl border border-slate-200 w-full" controls src="{{ Storage::disk($m->disk)->url($m->path) }}"></video>
+                                        <video class="rounded-xl border border-slate-200 w-full" controls src="{{ $m->url }}"></video>
                                     @endforeach
                                 </div>
                             @endif

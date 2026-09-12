@@ -5,7 +5,7 @@
         <meta property="og:type" content="event">
         <meta property="og:url" content="{{ route('events.show', $event->slug) }}">
         @if($event->media->first())
-            <meta property="og:image" content="{{ Storage::disk($event->media->first()->disk)->url($event->media->first()->path) }}">
+            <meta property="og:image" content="{{ $event->media->first()->url }}">
         @endif
     @endpush
 
@@ -20,8 +20,16 @@
         $googleUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='.urlencode($event->title).'&dates='.$start.'/'.$end.'&details='.urlencode(strip_tags($event->description)).'&location='.urlencode($event->address ?? '');
         $reminder = auth()->check() ? auth()->user()->eventReminders()->where('event_id', $event->id)->first() : null;
         $isSaved = auth()->check() ? $event->saves()->where('users.id', auth()->id())->exists() : false;
-        $heroImage = $event->media->where('type', 'image')->first();
-        $heroBg = $heroImage ? Storage::disk($heroImage->disk)->url($heroImage->path) : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80';
+        $images = $event->media->where('type', 'image')->values();
+        $videos = $event->media->where('type', 'video')->values();
+        $totalPhotos = $images->count();
+        $heroImage = $images->first();
+        $heroBg = $heroImage ? $heroImage->url : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80';
+        $imageUrls = $images->map(fn($m) => [
+            'url' => $m->url,
+            'caption' => $m->original_name ?? $event->title,
+        ])->values()->all();
+
         $remainingTotal = max(($event->ticketTypes->sum('quantity') ?? 0) - ($event->ticketTypes->sum('sold') ?? 0), 0);
         if($event->capacity){ $remainingTotal = min($remainingTotal, max($event->capacity - $event->ticketTypes->sum('sold'), 0)); }
         $channels = ['whatsapp' => ['label'=>'WhatsApp','icon'=>'💬','color'=>'bg-green-500'], 'facebook' => ['label'=>'Facebook','icon'=>'👥','color'=>'bg-blue-600'], 'x' => ['label'=>'X','icon'=>'𝕏','color'=>'bg-black'], 'linkedin' => ['label'=>'LinkedIn','icon'=>'in','color'=>'bg-blue-700']];
@@ -34,40 +42,109 @@
         $hasOrdersBuyRoute = \Illuminate\Support\Facades\Route::has('orders.buy');
     @endphp
 
-    {{-- Hero --}}
-    <div class="relative h-72 md:h-96 overflow-hidden">
-        <img src="{{ $heroBg }}" class="absolute inset-0 w-full h-full object-cover" alt="{{ $event->title }}">
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/30 to-transparent"></div>
-        <div class="relative app-content h-full flex items-end pb-8">
-            <div class="max-w-3xl">
-                <div class="flex flex-wrap gap-2 mb-3">
-                    <span class="badge">{{ strtoupper($event->event_type) }}</span>
-                    @if($event->is_featured)
-                        <span class="px-3 py-1 rounded-full bg-amber-400 text-amber-900 text-xs font-bold">Featured</span>
-                    @endif
-                    @if($event->category)
-                        <span class="badge bg-sky-500/90 text-white">{{ $event->category->name }}</span>
-                    @endif
+    {{-- Interactive Hero & Media Showcase --}}
+    <div x-data="{
+        activeIdx: 0,
+        photos: {{ Js::from($imageUrls) }},
+        get currentPhoto() {
+            return this.photos.length > 0 ? this.photos[this.activeIdx]?.url : '{{ $heroBg }}';
+        },
+        next() {
+            if (this.photos.length > 1) {
+                this.activeIdx = (this.activeIdx + 1) % this.photos.length;
+            }
+        },
+        prev() {
+            if (this.photos.length > 1) {
+                this.activeIdx = (this.activeIdx - 1 + this.photos.length) % this.photos.length;
+            }
+        },
+        openLightboxAt(idx) {
+            window.openLightboxIndex(idx);
+        }
+    }" class="relative bg-slate-950 overflow-hidden group">
+        {{-- Background active image --}}
+        <div class="relative h-80 sm:h-96 md:h-[420px] w-full overflow-hidden">
+            <img :src="currentPhoto" class="w-full h-full object-cover transition-all duration-500 ease-out" alt="{{ $event->title }}">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-slate-900/30"></div>
+
+            {{-- Prev / Next Controls on Hero --}}
+            <template x-if="photos.length > 1">
+                <div class="absolute inset-y-0 inset-x-4 flex items-center justify-between pointer-events-none z-20">
+                    <button @click="prev()" type="button" aria-label="Previous photo" class="pointer-events-auto p-2.5 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white shadow-lg backdrop-blur-sm border border-white/15 transition-all hover:scale-110">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button @click="next()" type="button" aria-label="Next photo" class="pointer-events-auto p-2.5 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white shadow-lg backdrop-blur-sm border border-white/15 transition-all hover:scale-110">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </button>
                 </div>
-                <h1 class="text-2xl md:text-4xl font-bold text-white leading-tight">{{ $event->title }}</h1>
-                <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-slate-200 text-sm">
-                    <span class="flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        {{ $event->event_date?->format('l, M j, Y') }}
+            </template>
+
+            {{-- Top Badges: Photo Counter & Fullscreen button --}}
+            <div class="absolute top-4 right-4 z-20 flex items-center gap-2">
+                <template x-if="photos.length > 0">
+                    <span class="px-3 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold border border-white/20 shadow-md flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span x-text="(activeIdx + 1) + ' / ' + photos.length"></span>
                     </span>
-                    <span class="flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        {{ $startTimeStr }}{{ $endTimeStr ? ' – '.$endTimeStr : '' }}
-                    </span>
-                    @if($event->venue_name || $event->city)
+                </template>
+                <button type="button" @click="openLightboxAt(activeIdx)" class="px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-slate-900 text-xs font-bold shadow-md transition-all hover:scale-105 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                    <span>Full View</span>
+                </button>
+            </div>
+
+            {{-- Hero Title and Info --}}
+            <div class="relative app-content h-full flex flex-col justify-end pb-8 z-10">
+                <div class="max-w-3xl">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span class="badge bg-slate-900/80 text-emerald-300 border-emerald-500/30">{{ strtoupper($event->event_type) }}</span>
+                        @if($event->is_featured)
+                            <span class="px-3 py-1 rounded-full bg-amber-400 text-amber-950 text-xs font-bold shadow">Featured</span>
+                        @endif
+                        @if($event->category)
+                            <span class="badge bg-emerald-600 text-white border-none">{{ $event->category->name }}</span>
+                        @endif
+                    </div>
+                    <h1 class="text-2xl md:text-4xl font-bold text-white leading-tight tracking-tight">{{ $event->title }}</h1>
+                    <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-slate-200 text-sm font-medium">
                         <span class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                            {{ $event->venue_name ?: $event->city }}
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {{ $event->event_date?->format('l, M j, Y') }}
                         </span>
-                    @endif
+                        <span class="flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            {{ $startTimeStr }}{{ $endTimeStr ? ' – '.$endTimeStr : '' }}
+                        </span>
+                        @if($event->venue_name || $event->city)
+                            <span class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                {{ $event->venue_name ?: $event->city }}
+                            </span>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
+
+        {{-- Dynamic Thumbnail Selector Bar (when multiple images exist) --}}
+        <template x-if="photos.length > 1">
+            <div class="bg-slate-900 border-t border-slate-800 px-4 py-3">
+                <div class="app-content max-w-6xl flex items-center gap-3 overflow-x-auto hide-scrollbar">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 shrink-0 mr-1">
+                        Gallery:
+                    </span>
+                    <template x-for="(p, idx) in photos" :key="idx">
+                        <button type="button"
+                                @click="activeIdx = idx"
+                                class="relative w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer"
+                                :class="activeIdx === idx ? 'border-emerald-400 ring-2 ring-emerald-400/40 scale-105 shadow-md' : 'border-slate-700 opacity-60 hover:opacity-100'">
+                            <img :src="p.url" class="w-full h-full object-cover" :alt="p.caption">
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </template>
     </div>
 
     <section class="page-section">
@@ -141,14 +218,28 @@
                     {{-- Media Gallery --}}
                     @if($event->media->count() > 0)
                         <div class="surface p-6">
-                            <h2 class="text-xl font-bold text-slate-900 mb-4">Photos & Videos</h2>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="text-xl font-bold text-slate-900">Photos &amp; Videos</h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Click any image to view in high resolution</p>
+                                </div>
+                                <span class="badge bg-slate-100 text-slate-700 text-xs font-bold">{{ $event->media->count() }} Media</span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                 @foreach($event->media as $m)
                                     @if($m->type === 'video')
-                                        <video class="rounded-xl border border-slate-200 w-full aspect-video object-cover" src="{{ Storage::disk($m->disk)->url($m->path) }}" controls></video>
+                                        <div class="rounded-xl border border-slate-200 overflow-hidden bg-black aspect-square flex items-center justify-center">
+                                            <video class="w-full h-full object-cover" src="{{ $m->url }}" controls></video>
+                                        </div>
                                     @else
-                                        <div class="media-tile aspect-square cursor-pointer" onclick="openLightbox('{{ Storage::disk($m->disk)->url($m->path) }}')">
-                                            <img src="{{ Storage::disk($m->disk)->url($m->path) }}" alt="{{ $m->original_name ?? '' }}" loading="lazy">
+                                        @php
+                                            $photoIndex = $images->search(fn($img) => $img->id === $m->id);
+                                        @endphp
+                                        <div class="media-tile aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-pointer group relative shadow-sm hover:shadow-md" onclick="window.openLightboxIndex({{ $photoIndex !== false ? $photoIndex : 0 }})">
+                                            <img src="{{ $m->url }}" alt="{{ $m->original_name ?? $event->title }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                <svg class="w-7 h-7 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+                                            </div>
                                         </div>
                                     @endif
                                 @endforeach
@@ -372,16 +463,105 @@
         </div>
     </section>
 
-    {{-- Lightbox --}}
-    <div id="lightbox" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-4" onclick="closeLightbox()">
-        <img id="lightboxImg" src="" class="max-h-[90vh] max-w-full rounded-xl object-contain" alt="">
-        <button onclick="closeLightbox()" class="absolute top-4 right-4 text-white bg-white/20 rounded-full p-2 hover:bg-white/30">
+    {{-- Interactive Multi-Photo Lightbox --}}
+    <div id="lightbox" class="fixed inset-0 bg-black/95 z-[300] hidden items-center justify-center p-4 select-none" role="dialog" aria-modal="true">
+        {{-- Close button --}}
+        <button onclick="closeLightbox()" class="absolute top-5 right-5 text-white/80 hover:text-white bg-white/10 hover:bg-white/25 rounded-full p-2.5 transition-all z-30 shadow-lg">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
+
+        {{-- Lightbox Navigation Arrows --}}
+        <button id="lightboxPrevBtn" onclick="lightboxPrev()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/25 rounded-full p-3 transition-all z-30 shadow-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button id="lightboxNextBtn" onclick="lightboxNext()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/25 rounded-full p-3 transition-all z-30 shadow-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        {{-- Center Image Stage --}}
+        <div class="max-w-5xl max-h-[85vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+            <img id="lightboxImg" src="" class="max-h-[75vh] max-w-full rounded-xl object-contain shadow-2xl transition-all duration-200" alt="">
+            <div class="mt-4 flex items-center justify-between w-full px-4 text-white text-sm">
+                <span id="lightboxCaption" class="text-white/80 truncate max-w-md"></span>
+                <span id="lightboxCounter" class="text-xs font-bold px-3 py-1 bg-white/15 rounded-full"></span>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
     <script>
+        const galleryPhotos = {{ Js::from($imageUrls) }};
+        let currentLightboxIndex = 0;
+
+        window.openLightboxIndex = function(index) {
+            if (!galleryPhotos || galleryPhotos.length === 0) return;
+            currentLightboxIndex = Math.max(0, Math.min(index, galleryPhotos.length - 1));
+            renderLightboxPhoto();
+            const lb = document.getElementById('lightbox');
+            lb.classList.remove('hidden');
+            lb.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.openLightbox = function(url) {
+            const idx = galleryPhotos.findIndex(p => p.url === url);
+            window.openLightboxIndex(idx !== -1 ? idx : 0);
+        };
+
+        window.closeLightbox = function() {
+            const lb = document.getElementById('lightbox');
+            lb.classList.add('hidden');
+            lb.classList.remove('flex');
+            document.body.style.overflow = '';
+        };
+
+        window.lightboxNext = function() {
+            if (galleryPhotos.length <= 1) return;
+            currentLightboxIndex = (currentLightboxIndex + 1) % galleryPhotos.length;
+            renderLightboxPhoto();
+        };
+
+        window.lightboxPrev = function() {
+            if (galleryPhotos.length <= 1) return;
+            currentLightboxIndex = (currentLightboxIndex - 1 + galleryPhotos.length) % galleryPhotos.length;
+            renderLightboxPhoto();
+        };
+
+        function renderLightboxPhoto() {
+            if (!galleryPhotos[currentLightboxIndex]) return;
+            const photo = galleryPhotos[currentLightboxIndex];
+            const img = document.getElementById('lightboxImg');
+            img.src = photo.url;
+            img.alt = photo.caption || '';
+            document.getElementById('lightboxCaption').textContent = photo.caption || '';
+            document.getElementById('lightboxCounter').textContent = (currentLightboxIndex + 1) + ' / ' + galleryPhotos.length;
+
+            const hideArrows = galleryPhotos.length <= 1;
+            document.getElementById('lightboxPrevBtn').style.display = hideArrows ? 'none' : 'block';
+            document.getElementById('lightboxNextBtn').style.display = hideArrows ? 'none' : 'block';
+        }
+
+        // Keyboard navigation for lightbox
+        document.addEventListener('keydown', function(e) {
+            const lb = document.getElementById('lightbox');
+            if (!lb || lb.classList.contains('hidden')) return;
+
+            if (e.key === 'Escape') {
+                closeLightbox();
+            } else if (e.key === 'ArrowRight') {
+                lightboxNext();
+            } else if (e.key === 'ArrowLeft') {
+                lightboxPrev();
+            }
+        });
+
+        // Click on backdrop to close
+        document.getElementById('lightbox')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLightbox();
+            }
+        });
+
         document.getElementById('copyShareBtn')?.addEventListener('click', async function () {
             const url = this.getAttribute('data-url');
             try {
@@ -394,15 +574,6 @@
                 }
             } catch (e) {}
         });
-        function openLightbox(src) {
-            document.getElementById('lightboxImg').src = src;
-            document.getElementById('lightbox').classList.remove('hidden');
-            document.getElementById('lightbox').classList.add('flex');
-        }
-        function closeLightbox() {
-            document.getElementById('lightbox').classList.add('hidden');
-            document.getElementById('lightbox').classList.remove('flex');
-        }
     </script>
     @endpush
 </x-app-layout>

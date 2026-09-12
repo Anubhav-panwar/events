@@ -16,7 +16,7 @@ class VendorDashboardController extends Controller
     {
         Gate::authorize('vendor');
         $profile = $this->vendorRepo->findByUser(auth()->user());
-        $events = $profile?->events()->latest()->paginate(10);
+        $events = $profile?->events()->with(['media', 'ticketTypes'])->latest()->paginate(10);
         return view('vendor.dashboard', compact('profile', 'events'));
     }
 }
