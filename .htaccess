@@ -25,6 +25,10 @@
     RewriteCond %{DOCUMENT_ROOT}/storage/app/public/$1 -f
     RewriteRule ^storage/(.*)$ storage/app/public/$1 [L]
 
+    # Direct access to public build assets if located in public/build
+    RewriteCond %{DOCUMENT_ROOT}/public/build/$1 -f
+    RewriteRule ^build/(.*)$ public/build/$1 [L]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f

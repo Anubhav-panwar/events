@@ -14,6 +14,162 @@
         <!-- Scripts & Styles -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @stack('styles')
+
+        <!-- Embedded Fallback Styles for Shared Hosting / cPanel (Immune to Build Caching) -->
+        <style>
+            .crm-sidebar {
+                background-color: #090e1a !important;
+                border-right: 1px solid #1e293b !important;
+                color: #cbd5e1 !important;
+                width: 18rem !important;
+                min-width: 18rem !important;
+                flex-shrink: 0 !important;
+            }
+            @media (min-width: 1024px) {
+                .crm-sidebar {
+                    position: static !important;
+                    transform: none !important;
+                }
+            }
+            .crm-sidebar-header {
+                height: 4rem !important;
+                background-color: #0c1424 !important;
+                border-bottom: 1px solid #1e293b !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .crm-sidebar .bg-slate-900 {
+                background-color: #0c1424 !important;
+                border-color: #1e293b !important;
+            }
+            .crm-sidebar .border-slate-800 {
+                border-color: #1e293b !important;
+            }
+            .crm-sidebar .text-slate-400 {
+                color: #94a3b8 !important;
+            }
+            .crm-sidebar .text-slate-500 {
+                color: #64748b !important;
+            }
+            .crm-nav-item {
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.75rem !important;
+                padding: 0.625rem 0.875rem !important;
+                border-radius: 0.75rem !important;
+                font-size: 0.875rem !important;
+                font-weight: 500 !important;
+                color: #94a3b8 !important;
+                transition: all 0.2s ease !important;
+                text-decoration: none !important;
+            }
+            .crm-nav-item:hover {
+                color: #f1f5f9 !important;
+                background-color: rgba(30, 41, 59, 0.7) !important;
+            }
+            .crm-nav-item-active {
+                color: #34d399 !important;
+                background-color: rgba(16, 185, 129, 0.12) !important;
+                border: 1px solid rgba(16, 185, 129, 0.3) !important;
+                font-weight: 600 !important;
+            }
+            .crm-header {
+                height: 4rem !important;
+                background-color: #ffffff !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .crm-card {
+                background-color: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 0.875rem !important;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+            }
+            /* Dark banner fallback */
+            .crm-banner,
+            .bg-gradient-to-r.from-slate-950,
+            .bg-gradient-to-r.from-slate-900 {
+                background: linear-gradient(135deg, #090e1a 0%, #131c31 50%, #090e1a 100%) !important;
+                background-color: #090e1a !important;
+                border: 1px solid #1e293b !important;
+                color: #ffffff !important;
+                border-radius: 1rem !important;
+            }
+            .crm-banner h1, .crm-banner h2, .crm-banner h3,
+            .bg-gradient-to-r.from-slate-950 h1,
+            .bg-gradient-to-r.from-slate-900 h1 {
+                color: #ffffff !important;
+            }
+            .crm-banner p,
+            .bg-gradient-to-r.from-slate-950 p,
+            .bg-gradient-to-r.from-slate-900 p {
+                color: #cbd5e1 !important;
+            }
+            /* Surface class fallback */
+            .surface {
+                background-color: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 0.75rem !important;
+                box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04) !important;
+            }
+            /* Button fallbacks */
+            .btn-emerald {
+                background-color: #059669 !important;
+                color: #ffffff !important;
+                font-weight: 700 !important;
+                border-radius: 0.5rem !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0.5rem 1rem !important;
+                text-decoration: none !important;
+                transition: background-color 0.2s !important;
+            }
+            .btn-emerald:hover {
+                background-color: #047857 !important;
+            }
+            .btn-primary {
+                background-color: #0f172a !important;
+                color: #ffffff !important;
+                font-weight: 700 !important;
+                border-radius: 0.5rem !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0.5rem 1rem !important;
+                text-decoration: none !important;
+            }
+            .btn-primary:hover {
+                background-color: #1e293b !important;
+            }
+            .btn-secondary {
+                background-color: #ffffff !important;
+                color: #334155 !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 0.5rem !important;
+                font-weight: 600 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0.5rem 1rem !important;
+                text-decoration: none !important;
+            }
+            .btn-secondary:hover {
+                background-color: #f8fafc !important;
+            }
+            .badge {
+                display: inline-flex !important;
+                align-items: center !important;
+                padding: 0.25rem 0.625rem !important;
+                border-radius: 9999px !important;
+                font-size: 0.75rem !important;
+                font-weight: 700 !important;
+            }
+        </style>
     </head>
     <body class="h-full bg-slate-50 text-slate-900 font-sans antialiased" x-data="{ mobileSidebarOpen: false }">
         @php
