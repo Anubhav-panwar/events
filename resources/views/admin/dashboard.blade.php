@@ -237,7 +237,7 @@
                                         <p class="text-[11px] text-slate-400 truncate">{{ $v->city ?: 'Location not set' }}</p>
                                     </div>
                                 </div>
-                                @if(\Illuminate\Support\Facades\Route::has('vendors.show'))
+                                @if(\Illuminate\Support\Facades\Route::has('vendors.show') && filled($v->slug))
                                     <a href="{{ route('vendors.show', $v->slug) }}" target="_blank" class="text-slate-400 hover:text-emerald-700 p-1" title="View Storefront">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                     </a>
@@ -436,7 +436,7 @@
                                         @endif
                                     </td>
                                     <td class="py-3.5 text-right whitespace-nowrap">
-                                        @if(\Illuminate\Support\Facades\Route::has('vendors.show'))
+                                        @if(\Illuminate\Support\Facades\Route::has('vendors.show') && filled($vendor->slug))
                                             <a href="{{ route('vendors.show', $vendor->slug) }}" target="_blank"
                                                class="btn-secondary text-[11px] py-1.5 px-2.5 inline-flex items-center gap-1">
                                                 <span>View Storefront</span>

@@ -63,7 +63,7 @@
                                     </div>
 
                                     <h3 class="font-bold text-slate-900 text-lg group-hover:text-emerald-700 transition-colors">
-                                        <a href="{{ route('vendors.show', $vendor->slug) }}">
+                                        <a href="{{ route('vendors.show', $vendor->slug ?: ('vendor-' . $vendor->id)) }}">
                                             {{ $vendor->business_name }}
                                         </a>
                                     </h3>
@@ -91,7 +91,7 @@
                                     <span>&bull;</span>
                                     <span><strong>{{ $followerCount }}</strong> followers</span>
                                 </div>
-                                <a href="{{ route('vendors.show', $vendor->slug) }}" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 group/btn">
+                                <a href="{{ route('vendors.show', $vendor->slug ?: ('vendor-' . $vendor->id)) }}" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 group/btn">
                                     <span>View Storefront</span>
                                     <span class="group-hover/btn:translate-x-0.5 transition-transform">&rarr;</span>
                                 </a>

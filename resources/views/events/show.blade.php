@@ -365,13 +365,19 @@
                                 {{ strtoupper(substr($event->vendorProfile?->business_name ?? 'V', 0, 1)) }}
                             </div>
                             <div>
-                                <a href="{{ route('vendors.show', $event->vendorProfile->slug) }}" class="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline">
-                                    {{ $event->vendorProfile?->business_name }}
-                                </a>
+                                @if($event->vendorProfile && filled($event->vendorProfile->slug))
+                                    <a href="{{ route('vendors.show', $event->vendorProfile->slug) }}" class="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline">
+                                        {{ $event->vendorProfile->business_name }}
+                                    </a>
+                                @else
+                                    <span class="font-semibold text-slate-800">{{ $event->vendorProfile?->business_name ?? 'Event Host' }}</span>
+                                @endif
                                 <p class="text-xs text-slate-500 mt-0.5">{{ $event->vendorProfile?->city }}{{ $event->vendorProfile?->country ? ', '.$event->vendorProfile->country : '' }}</p>
                             </div>
                         </div>
-                        <a href="{{ route('vendors.show', $event->vendorProfile->slug) }}" class="mt-4 block text-center text-sm text-emerald-700 hover:underline">View Vendor Profile →</a>
+                        @if($event->vendorProfile && filled($event->vendorProfile->slug))
+                            <a href="{{ route('vendors.show', $event->vendorProfile->slug) }}" class="mt-4 block text-center text-sm text-emerald-700 hover:underline">View Vendor Profile →</a>
+                        @endif
                     </div>
 
                     {{-- Tickets Card --}}

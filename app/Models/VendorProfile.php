@@ -54,6 +54,15 @@ class VendorProfile extends Model
         });
     }
 
+    public function getSlugAttribute($value): string
+    {
+        if (filled($value)) {
+            return (string) $value;
+        }
+
+        return Str::slug($this->business_name ?: ('vendor-' . ($this->id ?? 'profile'))) ?: ('vendor-' . ($this->id ?? 'profile'));
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
