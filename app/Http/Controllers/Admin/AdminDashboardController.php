@@ -18,12 +18,13 @@ class AdminDashboardController extends Controller
         Gate::authorize('admin');
 
         $tab = $request->query('tab', 'overview');
-        if (!in_array($tab, ['overview', 'events', 'vendors', 'financials'])) {
+        if (!in_array($tab, ['overview', 'users', 'categories', 'events', 'vendors', 'financials'])) {
             $tab = 'overview';
         }
 
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status', 'all');
+        $roleFilter = $request->query('role', 'all');
         $categoryId = $request->query('category_id');
 
         // Platform KPIs
@@ -39,6 +40,9 @@ class AdminDashboardController extends Controller
 
         $kpis = [
             'total_users' => $totalUsers,
+            'admin_users' => User::where('role', 'admin')->count(),
+            'vendor_users' => User::where('role', 'vendor')->count(),
+            'customer_users' => User::where('role', 'user')->count(),
             'total_vendors' => $totalVendors,
             'approved_vendors' => $approvedVendors,
             'total_events' => $totalEvents,
@@ -47,8 +51,27 @@ class AdminDashboardController extends Controller
             'total_orders' => $totalOrders,
             'paid_orders' => $paidOrders,
             'revenue' => $totalRevenue,
+            'total_categories' => Category::count(),
             'active_users' => User::whereNotNull('email_verified_at')->count(),
         ];
+
+        // Users Query for 'users' tab
+        $usersQuery = User::with(['vendorProfile'])->latest();
+        if ($search !== '' && $tab === 'users') {
+            $usersQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('vendorProfile', function ($vq) use ($search) {
+                      $vq->where('business_name', 'like', "%{$search}%")
+                         ->orWhere('city', 'like', "%{$search}%");
+                  });
+            });
+        }
+        if ($roleFilter !== 'all' && in_array($roleFilter, ['user', 'vendor', 'admin'])) {
+            $usersQuery->where('role', $roleFilter);
+        }
+        $allUsers = $usersQuery->paginate(15)->withQueryString();
+        $recentUsers = User::with('vendorProfile')->latest()->take(6)->get();
 
         // Events Query for 'events' or 'overview' tab
         $eventsQuery = Event::with(['vendorProfile', 'media', 'category'])->latest();
@@ -95,20 +118,34 @@ class AdminDashboardController extends Controller
         $ordersQuery = Order::with(['event', 'user'])->latest();
         $allOrders = $ordersQuery->paginate(15)->withQueryString();
 
+        // Categories Query for 'categories' tab
+        $categoriesQuery = Category::withCount(['events', 'vendorProfiles'])->orderBy('name');
+        if ($search !== '' && $tab === 'categories') {
+            $categoriesQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+        $allCategories = $categoriesQuery->paginate(15)->withQueryString();
+
         $categories = Category::orderBy('name')->get();
 
         return view('admin.dashboard', compact(
             'tab',
             'search',
             'status',
+            'roleFilter',
             'categoryId',
             'kpis',
+            'allUsers',
+            'recentUsers',
             'allEvents',
             'recentEvents',
             'allVendors',
             'recentVendors',
             'allOrders',
-            'categories'
+            'categories',
+            'allCategories'
         ));
     }
 }

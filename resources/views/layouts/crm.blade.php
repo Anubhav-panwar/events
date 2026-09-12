@@ -257,11 +257,23 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
                                     <span>Admin Overview</span>
                                 </a>
+                                <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}"
+                                   class="crm-nav-item {{ ($adminTab === 'users') ? 'crm-nav-item-active' : '' }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                    <span>User Management</span>
+                                    <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full {{ ($adminTab === 'users') ? 'bg-emerald-500/30 text-emerald-300' : 'bg-slate-800 text-slate-400' }}">{{ \App\Models\User::count() }}</span>
+                                </a>
                                 <a href="{{ route('admin.dashboard', ['tab' => 'events']) }}"
                                    class="crm-nav-item {{ ($adminTab === 'events') ? 'crm-nav-item-active' : '' }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                     <span>Platform Events</span>
                                     <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full {{ ($adminTab === 'events') ? 'bg-emerald-500/30 text-emerald-300' : 'bg-slate-800 text-slate-400' }}">{{ \App\Models\Event::count() }}</span>
+                                </a>
+                                <a href="{{ route('admin.dashboard', ['tab' => 'categories']) }}"
+                                   class="crm-nav-item {{ ($adminTab === 'categories') ? 'crm-nav-item-active' : '' }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                    <span>Categories</span>
+                                    <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full {{ ($adminTab === 'categories') ? 'bg-emerald-500/30 text-emerald-300' : 'bg-slate-800 text-slate-400' }}">{{ \App\Models\Category::count() }}</span>
                                 </a>
                                 <a href="{{ route('admin.dashboard', ['tab' => 'vendors']) }}"
                                    class="crm-nav-item {{ ($adminTab === 'vendors') ? 'crm-nav-item-active' : '' }}">
@@ -411,7 +423,7 @@
                 {{-- CRM Main Body --}}
                 <main class="flex-1 p-4 sm:p-6 lg:p-8">
                     {{-- Flash Messages --}}
-                    @if (session('status') || session('success') || (isset($errors) && $errors->any()))
+                    @if (session('status') || session('success') || session('error') || (isset($errors) && $errors->any()))
                         <div class="mb-6 space-y-2 max-w-4xl" id="crmToastContainer">
                             @if (session('status') || session('success'))
                                 <div class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl p-4 shadow-sm" id="crmSuccessToast">
@@ -423,6 +435,21 @@
                                         <p class="text-xs text-emerald-800 mt-0.5">{{ session('status') ?: session('success') }}</p>
                                     </div>
                                     <button onclick="document.getElementById('crmSuccessToast').remove()" class="text-emerald-500 hover:text-emerald-800">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            @endif
+
+                            @if (session('error'))
+                                <div class="flex items-start gap-3 bg-red-50 border border-red-200 text-red-900 rounded-xl p-4 shadow-sm" id="crmSessionErrorToast">
+                                    <div class="w-7 h-7 bg-red-100 rounded-full flex items-center justify-center shrink-0 text-red-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-red-950">Notice</p>
+                                        <p class="text-xs text-red-800 mt-0.5">{{ session('error') }}</p>
+                                    </div>
+                                    <button onclick="document.getElementById('crmSessionErrorToast').remove()" class="text-red-500 hover:text-red-800">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>

@@ -60,22 +60,6 @@
                             Contact
                         </x-nav-link>
                     @endif
-
-                    {{-- Customer-only personal links (Admins and Vendors manage these in their CRM) --}}
-                    @auth
-                        @if(!$isVendor && !$isAdmin)
-                            @if($hasAccountSavedRoute)
-                                <x-nav-link :href="route('account.saved')" :active="request()->routeIs('account.saved')">
-                                    Saved
-                                </x-nav-link>
-                            @endif
-                            @if($hasAccountTicketsRoute)
-                                <x-nav-link :href="route('account.tickets.index')" :active="request()->routeIs('account.tickets.*')">
-                                    My Tickets
-                                </x-nav-link>
-                            @endif
-                        @endif
-                    @endauth
                 </div>
             </div>
 
@@ -191,29 +175,19 @@
             @endif
 
             @auth
-                @if(!$isVendor && !$isAdmin)
-                    <div class="border-t border-slate-100 pt-2 mt-2">
-                        @if($hasAccountSavedRoute)
-                            <x-responsive-nav-link :href="route('account.saved')" :active="request()->routeIs('account.saved')">Saved Events</x-responsive-nav-link>
-                        @endif
-                        @if($hasAccountTicketsRoute)
-                            <x-responsive-nav-link :href="route('account.tickets.index')" :active="request()->routeIs('account.tickets.*')">My Tickets</x-responsive-nav-link>
-                        @endif
-                    </div>
-                @else
-                    {{-- Dedicated Mobile Single Dashboard CTA --}}
+                @if($isAdmin && $hasAdminDashboardRoute)
                     <div class="pt-2">
-                        @if($isAdmin && $hasAdminDashboardRoute)
-                            <a href="{{ route('admin.dashboard') }}" class="btn-emerald w-full py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2">
-                                <span>Admin Dashboard</span>
-                                <span>&rarr;</span>
-                            </a>
-                        @elseif($isVendor && $hasVendorDashboardRoute)
-                            <a href="{{ route('vendor.dashboard') }}" class="btn-emerald w-full py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2">
-                                <span>Go to Dashboard</span>
-                                <span>&rarr;</span>
-                            </a>
-                        @endif
+                        <a href="{{ route('admin.dashboard') }}" class="btn-emerald w-full py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2">
+                            <span>Admin Dashboard</span>
+                            <span>&rarr;</span>
+                        </a>
+                    </div>
+                @elseif($isVendor && $hasVendorDashboardRoute)
+                    <div class="pt-2">
+                        <a href="{{ route('vendor.dashboard') }}" class="btn-emerald w-full py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2">
+                            <span>Go to Dashboard</span>
+                            <span>&rarr;</span>
+                        </a>
                     </div>
                 @endif
             @endauth
