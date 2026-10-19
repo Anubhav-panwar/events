@@ -43,7 +43,8 @@
                     x-model="searchQuery"
                     @keydown.enter.prevent="searchLocation()"
                     placeholder="{{ __('Search venue, landmark, or street address on Google Maps...') }}"
-                    class="input-field pl-9 pr-8 text-sm"
+                    class="input-field pr-8 text-sm"
+                    style="padding-left: 2.5rem;"
                     autocomplete="off"
                 >
                 <button
@@ -310,6 +311,31 @@ function googleMapPicker(config) {
             });
         },
 
+        reverseGeocodeFallback(lat, lng) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`, {
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(res => res.ok ? res.json() : null)
+            .then(place => {
+                if (!place) return;
+                const parts = place.address || {};
+                const street = [parts.house_number, parts.road].filter(Boolean).join(' ');
+                const city = parts.city || parts.town || parts.village || parts.suburb || parts.county || '';
+                this.setLocationField('address', street || place.display_name || '');
+                this.setLocationField('city', city);
+                this.setLocationField('country', parts.country || '');
+            })
+            .catch(() => {});
+        },
+
+        setLocationField(name, value) {
+            const input = document.querySelector(`input[name="${name}"]`);
+            if (!input || !value) return;
+            input.value = value;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+
         populateFormFieldsFromGooglePlace(place, overrideVenue = true) {
             const components = place.address_components || [];
             let streetNumber = '';
@@ -329,24 +355,13 @@ function googleMapPicker(config) {
             const streetAddress = (streetNumber ? streetNumber + ' ' : '') + route;
 
             // Fill input fields if found on page
-            const addrInput = document.querySelector('input[name="address"]');
-            const cityInput = document.querySelector('input[name="city"]');
-            const countryInput = document.querySelector('input[name="country"]');
             const venueInput = document.querySelector('input[name="venue_name"]');
 
-            if (addrInput && streetAddress) {
-                addrInput.value = streetAddress;
-            } else if (addrInput && place.formatted_address && !addrInput.value) {
-                addrInput.value = place.formatted_address;
-            }
+            this.setLocationField('address', streetAddress || place.formatted_address || '');
 
-            if (cityInput && city) {
-                cityInput.value = city;
-            }
+            if (city) this.setLocationField('city', city);
 
-            if (countryInput && country) {
-                countryInput.value = country;
-            }
+            if (country) this.setLocationField('country', country);
 
             if (overrideVenue && venueInput && place.name && !venueInput.value) {
                 venueInput.value = place.name;
@@ -383,10 +398,19 @@ function googleMapPicker(config) {
                         this.setCoordinates(fLat, fLng);
                         this.leafletMap.setView([fLat, fLng], 15);
                         this.placeLeafletMarker(fLat, fLng);
+                        this.populateFormFieldsFromNominatim(data[0]);
                     }
                 })
                 .catch(() => {});
             }
+        },
+
+        populateFormFieldsFromNominatim(place) {
+            const parts = place.address || {};
+            const street = [parts.house_number, parts.road].filter(Boolean).join(' ');
+            this.setLocationField('address', street || place.display_name || '');
+            this.setLocationField('city', parts.city || parts.town || parts.village || parts.suburb || parts.county || '');
+            this.setLocationField('country', parts.country || '');
         },
 
         locateCurrentPosition() {
@@ -411,6 +435,7 @@ function googleMapPicker(config) {
                     } else if (this.leafletMap) {
                         this.leafletMap.setView([cLat, cLng], 15);
                         this.placeLeafletMarker(cLat, cLng);
+                        this.reverseGeocodeFallback(cLat, cLng);
                     }
                 },
                 (err) => {
@@ -483,6 +508,7 @@ function googleMapPicker(config) {
                     const cLng = e.latlng.lng;
                     this.setCoordinates(cLat, cLng);
                     this.placeLeafletMarker(cLat, cLng);
+                        this.reverseGeocodeFallback(cLat, cLng);
                 });
 
                 this.mapReady = true;
@@ -500,6 +526,7 @@ function googleMapPicker(config) {
                 this.leafletMarker.on('dragend', () => {
                     const pos = this.leafletMarker.getLatLng();
                     this.setCoordinates(pos.lat, pos.lng);
+                    this.reverseGeocodeFallback(pos.lat, pos.lng);
                 });
             }
         }

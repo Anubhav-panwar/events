@@ -499,6 +499,116 @@ class UpcomingEventsAndNotifyMeTest extends TestCase
         $this->assertNull($event->fresh()->dates_announced_at);
     }
 
+    public function test_announcement_only_sends_to_active_email_subscriptions(): void
+    {
+        Mail::fake();
+
+        $event = Event::create([
+            'vendor_profile_id' => $this->vendorProfile->id,
+            'category_id' => $this->category->id,
+            'title' => 'Email Channel Check',
+            'slug' => 'email-channel-check',
+            'status' => 'published',
+            'event_date' => Carbon::now()->addDays(8)->format('Y-m-d'),
+            'start_time' => '18:00',
+            'is_date_confirmed' => true,
+            'event_type' => 'free',
+        ]);
+
+        $emailReminder = EventReminder::create([
+            'user_id' => $this->customerUser->id,
+            'event_id' => $event->id,
+            'channel' => EventReminder::CHANNEL_EMAIL,
+            'status' => EventReminder::STATUS_ACTIVE,
+            'notification_status' => EventReminder::STATUS_PENDING,
+        ]);
+        $calendarReminder = EventReminder::create([
+            'user_id' => $this->customerUser2->id,
+            'event_id' => $event->id,
+            'channel' => 'calendar',
+            'status' => EventReminder::STATUS_ACTIVE,
+            'notification_status' => EventReminder::STATUS_PENDING,
+        ]);
+
+        app(EventNotificationService::class)->notifySubscribersOfAnnouncedDates($event);
+
+        Mail::assertSent(EventDatesAnnouncedMail::class, 1);
+        $this->assertSame(EventReminder::STATUS_SENT, $emailReminder->fresh()->notification_status);
+        $this->assertSame(EventReminder::STATUS_PENDING, $calendarReminder->fresh()->notification_status);
+    }
+
+    public function test_one_recipient_failure_does_not_stop_other_reminder_emails(): void
+    {
+        $event = Event::create([
+            'vendor_profile_id' => $this->vendorProfile->id,
+            'category_id' => $this->category->id,
+            'title' => 'Recipient Failure Isolation',
+            'slug' => 'recipient-failure-isolation',
+            'status' => 'published',
+            'event_date' => Carbon::now()->addDays(9)->format('Y-m-d'),
+            'start_time' => '19:00',
+            'is_date_confirmed' => true,
+            'event_type' => 'free',
+        ]);
+
+        $failedReminder = EventReminder::create([
+            'user_id' => $this->customerUser->id,
+            'event_id' => $event->id,
+            'channel' => EventReminder::CHANNEL_EMAIL,
+            'status' => EventReminder::STATUS_ACTIVE,
+            'notification_status' => EventReminder::STATUS_PENDING,
+        ]);
+        $successfulReminder = EventReminder::create([
+            'user_id' => $this->customerUser2->id,
+            'event_id' => $event->id,
+            'channel' => EventReminder::CHANNEL_EMAIL,
+            'status' => EventReminder::STATUS_ACTIVE,
+            'notification_status' => EventReminder::STATUS_PENDING,
+        ]);
+
+        $pendingMail = \Mockery::mock(\Illuminate\Mail\PendingMail::class);
+        $pendingMail->shouldReceive('send')->once()->with(\Mockery::type(EventDatesAnnouncedMail::class));
+        Mail::shouldReceive('to')->once()->with('alice@example.com')
+            ->andThrow(new \RuntimeException('SMTP failed, password=should-not-be-stored'));
+        Mail::shouldReceive('to')->once()->with('bob@example.com')->andReturn($pendingMail);
+
+        $sentCount = app(EventNotificationService::class)->notifySubscribersOfAnnouncedDates($event);
+
+        $this->assertSame(1, $sentCount);
+        $this->assertSame(EventReminder::STATUS_FAILED, $failedReminder->fresh()->notification_status);
+        $this->assertStringNotContainsString('should-not-be-stored', $failedReminder->fresh()->notification_error);
+        $this->assertSame(EventReminder::STATUS_SENT, $successfulReminder->fresh()->notification_status);
+    }
+
+    public function test_announcement_email_renders_event_details_and_only_shows_booking_when_available(): void
+    {
+        $event = Event::create([
+            'vendor_profile_id' => $this->vendorProfile->id,
+            'category_id' => $this->category->id,
+            'title' => 'Rendered Reminder Event',
+            'slug' => 'rendered-reminder-event',
+            'description' => 'A rendered event description.',
+            'venue_name' => 'Pier 27',
+            'city' => 'San Francisco',
+            'status' => 'published',
+            'event_date' => Carbon::now()->addDays(12)->format('Y-m-d'),
+            'start_time' => '18:00',
+            'is_date_confirmed' => true,
+            'event_type' => 'free',
+        ]);
+
+        $html = (new EventDatesAnnouncedMail($event, $this->customerUser))->render();
+
+        $this->assertStringContainsString('Rendered Reminder Event', $html);
+        $this->assertStringContainsString('Pier 27, San Francisco', $html);
+        $this->assertStringContainsString(route('events.show', $event->slug) . '#tickets', $html);
+        $this->assertStringContainsString('Book Your Tickets Now', $html);
+
+        $event->update(['event_type' => null]);
+        $htmlWithoutBooking = (new EventDatesAnnouncedMail($event->fresh(), $this->customerUser))->render();
+        $this->assertStringNotContainsString(route('events.show', $event->slug) . '#tickets', $htmlWithoutBooking);
+    }
+
     /** 13. Failed email delivery can be safely retried */
     public function test_failed_notification_is_tracked_and_can_be_retried(): void
     {

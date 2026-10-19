@@ -8,7 +8,9 @@ use App\Models\VendorProfile;
 use App\Repositories\EventRepository;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class EventService
 {
@@ -36,7 +38,14 @@ class EventService
 
     public function updateEvent(Event $event, array $data, array $mediaFiles = []): Event
     {
+        $correlationId = (string) Str::uuid();
         $wasAnnounced = !empty($event->dates_announced_at);
+
+        Log::info('Vendor event update received', [
+            'event_id' => $event->id,
+            'correlation_id' => $correlationId,
+            'was_announced' => $wasAnnounced,
+        ]);
 
         $event = $this->repo->update($event, $data);
         foreach ($mediaFiles as $file) {
@@ -45,9 +54,33 @@ class EventService
 
         $event->refresh();
 
+        Log::info('Vendor event saved', [
+            'event_id' => $event->id,
+            'correlation_id' => $correlationId,
+            'status' => $event->status,
+            'date_confirmed' => $event->isDateConfirmed(),
+            'has_event_date' => !empty($event->event_date),
+            'has_start_time' => !empty($event->start_time),
+            'booking_eligible' => $event->isBookingEligible(),
+        ]);
+
         // Trigger date announcement emails if dates were unannounced and are now confirmed & published
         if (!$wasAnnounced && $event->status === 'published' && $event->isDateConfirmed()) {
-            $this->notificationService->notifySubscribersOfAnnouncedDates($event);
+            Log::info('Vendor event update triggers date announcement', [
+                'event_id' => $event->id,
+                'correlation_id' => $correlationId,
+                'reason' => 'first_confirmed_published_save',
+            ]);
+            $this->notificationService->notifySubscribersOfAnnouncedDates($event, $correlationId);
+        } else {
+            $reason = $wasAnnounced
+                ? 'already_announced'
+                : ($event->status !== 'published' ? 'event_not_published' : 'schedule_not_confirmed');
+            Log::info('Vendor event update skipped date announcement', [
+                'event_id' => $event->id,
+                'correlation_id' => $correlationId,
+                'reason' => $reason,
+            ]);
         }
 
         return $event;
