@@ -41,4 +41,9 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID', env('VITE_GOOGLE_CLIENT_ID')),
+        'maps_api_key' => env('GOOGLE_MAPS_API_KEY', env('VITE_GOOGLE_MAPS_API_KEY', env('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'))),
+    ],
+
 ];

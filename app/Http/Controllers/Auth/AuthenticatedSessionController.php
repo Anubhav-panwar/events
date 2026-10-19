@@ -26,9 +26,20 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = $request->user();
+        if ($user && $user->isBlocked()) {
+            $reason = $user->blocked_reason ?: __('Your account has been suspended by an administrator.');
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'email' => __('Your account has been blocked. Reason: :reason', ['reason' => $reason]),
+            ]);
+        }
+
         $request->session()->regenerate();
 
-        $user = $request->user();
         if ($user->isAdmin()) {
             return redirect()->intended(route('admin.dashboard'));
         }

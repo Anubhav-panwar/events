@@ -14,6 +14,8 @@ class Order extends Model
         'vendor_profile_id',
         'event_id',
         'total',
+        'platform_fee',
+        'refunded_amount',
         'currency',
         'status',
         'payment_provider',
@@ -23,6 +25,7 @@ class Order extends Model
         'referral_source',
         'reserved_at',
         'paid_at',
+        'refunded_at',
         'cancelled_at',
         'failed_reason',
     ];
@@ -30,8 +33,11 @@ class Order extends Model
     protected $casts = [
         'reserved_at' => 'datetime',
         'paid_at' => 'datetime',
+        'refunded_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'total' => 'decimal:2',
+        'platform_fee' => 'decimal:2',
+        'refunded_amount' => 'decimal:2',
     ];
 
     public function user()
@@ -57,5 +63,56 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function getGrossRevenueAttribute(): float
+    {
+        if ($this->status === 'paid') {
+            return (float) $this->total;
+        }
+
+        return 0.0;
+    }
+
+    public function getNetRevenueAttribute(): float
+    {
+        if ($this->status === 'paid') {
+            $gross = (float) $this->total;
+            $refunded = (float) $this->refunded_amount;
+            $fee = (float) $this->platform_fee;
+
+            return max(0.0, round($gross - $refunded - $fee, 2));
+        }
+
+        return 0.0;
+    }
+
+    public function getIsFreeAttribute(): bool
+    {
+        return (float) $this->total <= 0 || $this->payment_provider === 'free';
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('status', 'paid');
+    }
+
+    public function scopeFree($query)
+    {
+        return $query->where('status', 'paid')
+            ->where(function ($q) {
+                $q->where('total', '<=', 0)
+                    ->orWhere('payment_provider', 'free');
+            });
+    }
+
+    public function scopeRefunded($query)
+    {
+        return $query->where('status', 'refunded');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', 'cancelled');
     }
 }

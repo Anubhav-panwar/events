@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" translate="no" class="h-full notranslate">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="google" content="notranslate">
 
         <title>{{ $title ?? 'Account' }} — {{ config('app.name', 'Huddle') }}</title>
 
@@ -27,7 +28,7 @@
             }
         </style>
     </head>
-    <body class="h-full font-sans antialiased bg-slate-50 text-slate-900">
+    <body class="h-full font-sans antialiased bg-slate-50 text-slate-900 notranslate">
         <div class="min-h-screen flex flex-col lg:flex-row">
             
             {{-- Left Side: Premium Brand Showcase (Desktop only) --}}
@@ -36,14 +37,14 @@
                 <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
                 {{-- Top Brand Header --}}
-                <div class="relative z-10">
+                <div class="relative z-10 flex items-center justify-between">
                     <a href="{{ route('home') }}" class="inline-flex items-center gap-3 group">
                         <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-950/40 group-hover:scale-105 transition-transform">
                             <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                         </div>
                         <div class="flex flex-col">
                             <span class="text-xl font-bold text-white tracking-tight leading-tight">Huddle</span>
-                            <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Events &amp; Community</span>
+                            <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">{{ __('Events & Community') }}</span>
                         </div>
                     </a>
                 </div>
@@ -52,13 +53,13 @@
                 <div class="relative z-10 my-auto py-12 max-w-lg">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold mb-6">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Verified Event Marketplace
+                        {{ __('Verified Event Marketplace') }}
                     </div>
                     <h1 class="text-3xl xl:text-4xl font-bold text-white tracking-tight leading-tight">
-                        Your Gateway to Unforgettable Live Experiences.
+                        {{ __('Your Gateway to Unforgettable Live Experiences.') }}
                     </h1>
                     <p class="mt-4 text-slate-300 text-base leading-relaxed">
-                        Discover trending concerts, tech summits, food festivals, and local workshops. Book securely and check in seamlessly.
+                        {{ __('Discover trending concerts, tech summits, food festivals, and local workshops. Book securely and check in seamlessly.') }}
                     </p>
 
                     {{-- Feature Bullets --}}
@@ -68,8 +69,8 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             </div>
                             <div>
-                                <h4 class="text-sm font-bold text-white">Curated Platform Events</h4>
-                                <p class="text-xs text-slate-400 mt-0.5">Explore authentic, verified listings from premier organizers across top cities.</p>
+                                <h4 class="text-sm font-bold text-white">{{ __('Curated Platform Events') }}</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">{{ __('Explore authentic, verified listings from premier organizers across top cities.') }}</p>
                             </div>
                         </div>
 
@@ -78,8 +79,8 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             </div>
                             <div>
-                                <h4 class="text-sm font-bold text-white">Instant QR &amp; Secure Stripe Payments</h4>
-                                <p class="text-xs text-slate-400 mt-0.5">Zero waiting time. Digital tickets issued to your account and email immediately.</p>
+                                <h4 class="text-sm font-bold text-white">{{ __('Instant QR & Secure Stripe Payments') }}</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">{{ __('Zero waiting time. Digital tickets issued to your account and email immediately.') }}</p>
                             </div>
                         </div>
                     </div>
@@ -93,16 +94,21 @@
                             <img class="w-7 h-7 rounded-full border-2 border-slate-900 object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Attendee">
                             <img class="w-7 h-7 rounded-full border-2 border-slate-900 object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Attendee">
                         </div>
-                        <span class="text-slate-300 font-medium">Joined by 10,000+ community attendees</span>
+                        <span class="text-slate-300 font-medium">{{ __('Joined by 10,000+ community attendees') }}</span>
                     </div>
                     <a href="{{ route('home') }}" class="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 font-semibold">
-                        &larr; Back to Site
+                        &larr; {{ __('Back to Site') }}
                     </a>
                 </div>
             </div>
 
             {{-- Right Side: Clean Modern Form Canvas --}}
-            <div class="flex-1 flex flex-col justify-center px-4 sm:px-6 md:px-8 py-10 sm:py-16 bg-slate-50">
+            <div class="flex-1 flex flex-col justify-center px-4 sm:px-6 md:px-8 py-10 sm:py-16 bg-slate-50 relative">
+                {{-- Top-Right Language Switcher for Auth Page --}}
+                <div class="sm:absolute sm:top-6 sm:right-8 flex justify-end mb-4 sm:mb-0">
+                    <x-language-switcher />
+                </div>
+
                 <div class="sm:mx-auto sm:w-full sm:max-w-md">
                     
                     {{-- Mobile-only Brand Header --}}
@@ -121,7 +127,7 @@
                     </div>
 
                     <div class="mt-6 text-center text-xs text-slate-500">
-                        Protected by 256-bit SSL encryption &bull; <a href="{{ route('about') }}" class="text-emerald-700 hover:underline">Learn more about Huddle</a>
+                        {{ __('Protected by 256-bit SSL encryption') }} &bull; <a href="{{ route('about') }}" class="text-emerald-700 hover:underline">{{ __('Learn more about Huddle') }}</a>
                     </div>
                 </div>
             </div>

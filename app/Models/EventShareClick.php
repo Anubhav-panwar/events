@@ -9,7 +9,7 @@ class EventShareClick extends Model
 {
     use HasFactory;
 
-    public const CHANNELS = ['whatsapp', 'facebook', 'x', 'linkedin', 'copy'];
+    public const CHANNELS = ['whatsapp', 'facebook', 'x', 'linkedin', 'telegram', 'email', 'copy'];
 
     public $timestamps = false;
 

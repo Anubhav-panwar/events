@@ -87,4 +87,24 @@ class VendorProfile extends Model
     {
         return $this->hasMany(VendorMedia::class);
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(VendorReview::class);
+    }
+
+    public function averageRating(): float
+    {
+        return (float) round($this->reviews()->avg('rating') ?? 0, 1);
+    }
+
+    public function reviewsCount(): int
+    {
+        return (int) $this->reviews()->count();
+    }
+
+    public function shareClicks()
+    {
+        return $this->hasMany(VendorShareClick::class);
+    }
 }

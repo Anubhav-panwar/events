@@ -23,4 +23,10 @@ class Category extends Model
     {
         return $this->hasMany(Event::class);
     }
+
+    public function getNameAttribute($value): ?string
+    {
+        return $value ? __($value) : $value;
+    }
 }
+

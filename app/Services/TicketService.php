@@ -11,6 +11,11 @@ class TicketService
 {
     public function issueForOrder(Order $order): void
     {
+        // Enforce: ticket codes are generated ONLY after successful payment verification and booking confirmation
+        if ($order->status !== 'paid') {
+            return;
+        }
+
         $order->loadMissing('items.ticketType.event');
 
         foreach ($order->items as $item) {
@@ -27,13 +32,16 @@ class TicketService
             return;
         }
 
+        $eventId = $order->event_id ?: $item->ticketType?->event_id;
+        $tier = $item->ticketType?->tier;
+
         for ($i = 0; $i < $missing; $i++) {
-            $code = $this->generateUniqueCode($order->event_id ?: $item->ticketType?->event_id);
+            $code = Ticket::generateUniqueCode($eventId, $tier);
 
             Ticket::create([
                 'order_item_id' => $item->id,
                 'code' => $code,
-                'attendee_name' => $order->user?->name,
+                'attendee_name' => $order->user?->name ?? __('Guest Attendee'),
                 'qr_data' => $this->buildQrPayload($order, $item, $code),
                 'issued_at' => now(),
             ]);
@@ -42,12 +50,7 @@ class TicketService
 
     private function generateUniqueCode(?int $eventId): string
     {
-        do {
-            $prefix = $eventId ? 'EV' . $eventId : 'EVX';
-            $code = $prefix . '-' . strtoupper(Str::random(10));
-        } while (Ticket::query()->where('code', $code)->exists());
-
-        return $code;
+        return Ticket::generateUniqueCode($eventId);
     }
 
     private function buildQrPayload(Order $order, OrderItem $item, string $code): string
@@ -56,6 +59,8 @@ class TicketService
             'ticket_code' => $code,
             'order_id' => $order->id,
             'event_id' => $order->event_id ?: $item->ticketType?->event_id,
+            'tier' => $item->ticketType?->name,
+            'attendee' => $order->user?->name,
             'issued_at' => now()->toIso8601String(),
         ], JSON_UNESCAPED_SLASHES);
     }

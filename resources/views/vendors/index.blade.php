@@ -1,7 +1,7 @@
 <x-app-layout>
     @push('meta')
-        <title>Verified Event Organizers &amp; Partners — Huddle</title>
-        <meta name="description" content="Discover premier event organizers, music producers, workshop leaders, and festival hosts verified on Huddle.">
+        <title>{{ __('Verified Event Organizers & Partners — Huddle') }}</title>
+        <meta name="description" content="{{ __('Discover premier event organizers, music producers, workshop leaders, and festival hosts verified on Huddle.') }}">
     @endpush
 
     {{-- Directory Hero Header --}}
@@ -9,13 +9,13 @@
         <div class="absolute -right-16 -top-16 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="app-content relative z-10 max-w-4xl">
             <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30 uppercase tracking-wider">
-                Organizer Directory
+                {{ __('Organizer Directory') }}
             </span>
             <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mt-4">
-                Verified Event Hosts &amp; Venues
+                {{ __('Verified Event Hosts & Venues') }}
             </h1>
             <p class="text-slate-300 text-base sm:text-lg mt-3 max-w-2xl leading-relaxed">
-                Connect with authentic event creators, festival producers, and venue partners curating live experiences across top cities.
+                {{ __('Connect with authentic event creators, festival producers, and venue partners curating live experiences across top cities.') }}
             </p>
         </div>
     </section>
@@ -58,7 +58,7 @@
                                             {{ strtoupper(substr($vendor->business_name, 0, 1)) }}
                                         </div>
                                         <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                                            ✓ Verified Host
+                                            ✓ {{ __('Verified Host') }}
                                         </span>
                                     </div>
 
@@ -77,7 +77,7 @@
                                     @if($vendor->categories->count())
                                         <div class="flex flex-wrap gap-1.5 mt-4">
                                             @foreach($vendor->categories->take(3) as $cat)
-                                                <span class="badge text-[10px] bg-slate-100 text-slate-700 border-slate-200">{{ $cat->name }}</span>
+                                                <span class="badge text-[10px] bg-slate-100 text-slate-700 border-slate-200">{{ __($cat->name) }}</span>
                                             @endforeach
                                         </div>
                                     @endif
@@ -87,12 +87,12 @@
                             {{-- Footer Bar --}}
                             <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                                 <div class="flex items-center gap-3 text-xs text-slate-500 font-medium">
-                                    <span><strong>{{ $eventCount }}</strong> events</span>
+                                    <span><strong>{{ $eventCount }}</strong> {{ __('events') }}</span>
                                     <span>&bull;</span>
-                                    <span><strong>{{ $followerCount }}</strong> followers</span>
+                                    <span><strong>{{ $followerCount }}</strong> {{ __('followers') }}</span>
                                 </div>
                                 <a href="{{ route('vendors.show', $vendor->slug ?: ('vendor-' . $vendor->id)) }}" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 group/btn">
-                                    <span>View Storefront</span>
+                                    <span>{{ __('View Storefront') }}</span>
                                     <span class="group-hover/btn:translate-x-0.5 transition-transform">&rarr;</span>
                                 </a>
                             </div>
@@ -108,10 +108,10 @@
                     <div class="w-16 h-16 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
                         🏢
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-2">No organizers listed yet</h3>
-                    <p class="text-slate-500 text-sm mb-6">Be the first to register your organization and publish events on Huddle.</p>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">{{ __('No organizers listed yet') }}</h3>
+                    <p class="text-slate-500 text-sm mb-6">{{ __('Be the first to register your organization and publish events on Huddle.') }}</p>
                     @guest
-                        <a href="{{ route('register') }}" class="btn-emerald px-8 py-3 font-bold">Register as an Organizer</a>
+                        <a href="{{ route('register') }}" class="btn-emerald px-8 py-3 font-bold">{{ __('Register as an Organizer') }}</a>
                     @endguest
                 </div>
             @endif

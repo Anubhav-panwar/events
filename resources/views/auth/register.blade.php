@@ -1,8 +1,8 @@
-<x-guest-layout title="Create Account">
+<x-guest-layout :title="__('Create Account')">
     {{-- Form Header --}}
     <div class="mb-6">
-        <h2 class="text-2xl font-bold tracking-tight text-slate-950">Create your account</h2>
-        <p class="text-sm text-slate-500 mt-1">Get instant access to curated events, ticket booking, and community updates.</p>
+        <h2 class="text-2xl font-bold tracking-tight text-slate-950">{{ __('Create your account') }}</h2>
+        <p class="text-sm text-slate-500 mt-1">{{ __('Get instant access to curated events, ticket booking, and community updates.') }}</p>
     </div>
 
     <form method="POST" action="{{ route('register') }}" class="space-y-4">
@@ -11,7 +11,7 @@
         <!-- Name -->
         <div>
             <label for="name" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Full Name
+                {{ __('Full Name') }}
             </label>
             <div class="relative rounded-xl shadow-sm">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -33,7 +33,7 @@
         <!-- Email Address -->
         <div>
             <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Email Address
+                {{ __('Email Address') }}
             </label>
             <div class="relative rounded-xl shadow-sm">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -54,7 +54,7 @@
         <!-- Password -->
         <div>
             <label for="password" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Password
+                {{ __('Password') }}
             </label>
             <div class="relative rounded-xl shadow-sm">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -65,7 +65,7 @@
                        name="password"
                        required
                        autocomplete="new-password"
-                       placeholder="At least 8 characters"
+                       placeholder="{{ __('At least 8 characters') }}"
                        class="block w-full rounded-xl border-slate-300 pl-10 pr-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 transition-all">
             </div>
             <x-input-error :messages="$errors->get('password')" class="mt-1.5 text-xs text-red-600 font-medium" />
@@ -74,7 +74,7 @@
         <!-- Confirm Password -->
         <div>
             <label for="password_confirmation" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Confirm Password
+                {{ __('Confirm Password') }}
             </label>
             <div class="relative rounded-xl shadow-sm">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -85,7 +85,7 @@
                        name="password_confirmation"
                        required
                        autocomplete="new-password"
-                       placeholder="Repeat password"
+                       placeholder="{{ __('Repeat password') }}"
                        class="block w-full rounded-xl border-slate-300 pl-10 pr-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 transition-all">
             </div>
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1.5 text-xs text-red-600 font-medium" />
@@ -94,13 +94,13 @@
         <!-- Host Reassurance Pill -->
         <div class="p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-start gap-2.5">
             <span class="text-base leading-none">💡</span>
-            <p><strong>Are you an event host?</strong> You can activate your vendor profile immediately after sign up to publish events and sell tickets.</p>
+            <p><strong>{{ __('Are you an event host?') }}</strong> {{ __('You can activate your vendor profile immediately after sign up to publish events and sell tickets.') }}</p>
         </div>
 
         <!-- Submit Button -->
         <div class="pt-2">
             <button type="submit" class="w-full btn-emerald py-3 text-sm font-bold shadow-md shadow-emerald-900/10 hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                <span>Create Account</span>
+                <span>{{ __('Create Account') }}</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </button>
         </div>
@@ -109,9 +109,9 @@
     {{-- Switch to Login --}}
     <div class="mt-6 pt-6 border-t border-slate-100 text-center">
         <p class="text-xs text-slate-600">
-            Already have an account?
+            {{ __('Already have an account?') }}
             <a href="{{ route('login') }}" class="font-bold text-emerald-700 hover:text-emerald-800 ml-1">
-                Sign in &rarr;
+                {{ __('Sign in') }} &rarr;
             </a>
         </p>
     </div>

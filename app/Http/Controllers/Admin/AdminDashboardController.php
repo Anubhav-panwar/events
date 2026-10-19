@@ -25,6 +25,7 @@ class AdminDashboardController extends Controller
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status', 'all');
         $roleFilter = $request->query('role', 'all');
+        $accountStatus = $request->query('account_status', 'all');
         $categoryId = $request->query('category_id');
 
         // Platform KPIs
@@ -53,14 +54,17 @@ class AdminDashboardController extends Controller
             'revenue' => $totalRevenue,
             'total_categories' => Category::count(),
             'active_users' => User::whereNotNull('email_verified_at')->count(),
+            'blocked_users' => User::where('is_blocked', true)->count(),
+            'active_accounts' => User::where('is_blocked', false)->count(),
         ];
 
         // Users Query for 'users' tab
-        $usersQuery = User::with(['vendorProfile'])->latest();
+        $usersQuery = User::with(['vendorProfile', 'blockedBy'])->latest();
         if ($search !== '' && $tab === 'users') {
             $usersQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('blocked_reason', 'like', "%{$search}%")
                   ->orWhereHas('vendorProfile', function ($vq) use ($search) {
                       $vq->where('business_name', 'like', "%{$search}%")
                          ->orWhere('city', 'like', "%{$search}%");
@@ -69,6 +73,11 @@ class AdminDashboardController extends Controller
         }
         if ($roleFilter !== 'all' && in_array($roleFilter, ['user', 'vendor', 'admin'])) {
             $usersQuery->where('role', $roleFilter);
+        }
+        if ($accountStatus === 'active') {
+            $usersQuery->where('is_blocked', false);
+        } elseif ($accountStatus === 'blocked') {
+            $usersQuery->where('is_blocked', true);
         }
         $allUsers = $usersQuery->paginate(15)->withQueryString();
         $recentUsers = User::with('vendorProfile')->latest()->take(6)->get();
@@ -135,6 +144,7 @@ class AdminDashboardController extends Controller
             'search',
             'status',
             'roleFilter',
+            'accountStatus',
             'categoryId',
             'kpis',
             'allUsers',

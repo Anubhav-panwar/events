@@ -44,7 +44,7 @@ class EventMarketplaceFlowTest extends TestCase
             'event_type' => 'paid',
             'base_price' => 15,
             'tags' => 'laravel, php',
-            'audience' => 'developers, students',
+            'audience' => ['Adults', 'All Ages'],
             'is_featured' => 1,
         ]);
 
@@ -70,7 +70,7 @@ class EventMarketplaceFlowTest extends TestCase
             'event_type' => 'paid',
             'base_price' => 20,
             'tags' => 'laravel, php, api',
-            'audience' => 'developers',
+            'audience' => ['Adults'],
             'is_featured' => 1,
         ]);
 

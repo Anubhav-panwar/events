@@ -33,31 +33,31 @@
                 <div class="hidden space-x-1 sm:ms-8 sm:flex items-center">
                     @if($hasHomeRoute)
                         <x-nav-link :href="route('home')" :active="request()->routeIs('home')">
-                            Home
+                            {{ __('Home') }}
                         </x-nav-link>
                     @endif
 
                     @if($hasEventsIndexRoute)
                         <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.*') || request()->routeIs('search')">
-                            Explore Events
+                            {{ __('Explore Events') }}
                         </x-nav-link>
                     @endif
 
                     @if($hasVendorsIndexRoute)
                         <x-nav-link :href="route('vendors.index')" :active="request()->routeIs('vendors.*')">
-                            Vendors
+                            {{ __('Vendors') }}
                         </x-nav-link>
                     @endif
 
                     @if($hasAboutRoute)
                         <x-nav-link :href="route('about')" :active="request()->routeIs('about')">
-                            About
+                            {{ __('About') }}
                         </x-nav-link>
                     @endif
 
                     @if($hasContactRoute)
                         <x-nav-link :href="route('contact')" :active="request()->routeIs('contact')">
-                            Contact
+                            {{ __('Contact') }}
                         </x-nav-link>
                     @endif
                 </div>
@@ -65,6 +65,9 @@
 
             {{-- Right Side Actions --}}
             <div class="hidden sm:flex sm:items-center sm:gap-3">
+                {{-- Language Selector in Top-Right Navbar --}}
+                <x-language-switcher />
+
                 @auth
                     {{-- Dedicated Single 'Go to Dashboard' Button for Admin and Vendor --}}
                     @if($isAdmin && $hasAdminDashboardRoute)
@@ -72,7 +75,7 @@
                            class="btn-emerald text-xs py-2 px-3.5 inline-flex items-center gap-1.5 shadow-sm shadow-emerald-950/20 font-bold"
                            title="Super Admin Dashboard">
                             <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                            <span>Admin Dashboard</span>
+                            <span>{{ __('Admin Dashboard') }}</span>
                             <span class="text-white/80">&rarr;</span>
                         </a>
                     @elseif($isVendor && $hasVendorDashboardRoute)
@@ -80,7 +83,7 @@
                            class="btn-emerald text-xs py-2 px-3.5 inline-flex items-center gap-1.5 shadow-sm shadow-emerald-950/20 font-bold"
                            title="Vendor Management Portal">
                             <span class="w-2 h-2 rounded-full bg-white"></span>
-                            <span>Go to Dashboard</span>
+                            <span>{{ __('Go to Dashboard') }}</span>
                             <span class="text-white/80">&rarr;</span>
                         </a>
                     @endif
@@ -103,26 +106,26 @@
                             </div>
                             
                             <x-dropdown-link :href="route('profile.edit')">
-                                My Profile
+                                {{ __('My Profile') }}
                             </x-dropdown-link>
 
                             @if($isAdmin && $hasAdminDashboardRoute)
                                 <x-dropdown-link :href="route('admin.dashboard')" class="text-emerald-700 font-bold">
-                                    Admin Dashboard &rarr;
+                                    {{ __('Admin Dashboard') }} &rarr;
                                 </x-dropdown-link>
                             @elseif($isVendor && $hasVendorDashboardRoute)
                                 <x-dropdown-link :href="route('vendor.dashboard')" class="text-emerald-700 font-bold">
-                                    Vendor Dashboard &rarr;
+                                    {{ __('Vendor Dashboard') }} &rarr;
                                 </x-dropdown-link>
                             @else
                                 @if($hasAccountSavedRoute)
                                     <x-dropdown-link :href="route('account.saved')">
-                                        Saved Events
+                                        {{ __('Saved Events') }}
                                     </x-dropdown-link>
                                 @endif
                                 @if($hasAccountTicketsRoute)
                                     <x-dropdown-link :href="route('account.tickets.index')">
-                                        My Tickets
+                                        {{ __('My Tickets') }}
                                     </x-dropdown-link>
                                 @endif
                             @endif
@@ -131,21 +134,22 @@
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="text-slate-900 hover:text-red-700 font-bold">
-                                        Sign Out
+                                        {{ __('Sign Out') }}
                                     </x-dropdown-link>
                                 </form>
                             </div>
                         </x-slot>
                     </x-dropdown>
                 @else
-                    <a href="{{ route('login') }}" class="px-3.5 py-2 text-sm font-bold text-slate-700 hover:text-emerald-700 transition-colors">Login</a>
-                    <a href="{{ route('register') }}" class="btn-emerald text-sm py-2 px-4 shadow-sm">Register</a>
+                    <a href="{{ route('login') }}" class="px-3.5 py-2 text-sm font-bold text-slate-700 hover:text-emerald-700 transition-colors">{{ __('Login') }}</a>
+                    <a href="{{ route('register') }}" class="btn-emerald text-sm py-2 px-4 shadow-sm">{{ __('Register') }}</a>
                 @endauth
             </div>
 
-            {{-- Mobile Hamburger Trigger --}}
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 focus:outline-none transition">
+            {{-- Mobile Actions Bar --}}
+            <div class="-me-2 flex items-center sm:hidden gap-2">
+                <x-language-switcher />
+                <button @click="open = ! open" aria-label="{{ __('Toggle navigation menu') }}" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 focus:outline-none transition">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -157,35 +161,40 @@
 
     {{-- Clean Customer-Centric Mobile Menu --}}
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-white border-t border-slate-200 shadow-xl">
+        {{-- Mobile Language Selector Section --}}
+        <div class="pt-3 pb-2 px-4 border-b border-slate-100 bg-slate-50/50">
+            <x-language-switcher :mobile="true" />
+        </div>
+
         <div class="pt-2 pb-3 space-y-1 px-4">
             @if($hasHomeRoute)
-                <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')">Home</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')">{{ __('Home') }}</x-responsive-nav-link>
             @endif
             @if($hasEventsIndexRoute)
-                <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.*') || request()->routeIs('search')">Explore Events</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.*') || request()->routeIs('search')">{{ __('Explore Events') }}</x-responsive-nav-link>
             @endif
             @if($hasVendorsIndexRoute)
-                <x-responsive-nav-link :href="route('vendors.index')" :active="request()->routeIs('vendors.*')">Vendors</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('vendors.index')" :active="request()->routeIs('vendors.*')">{{ __('Vendors') }}</x-responsive-nav-link>
             @endif
             @if($hasAboutRoute)
-                <x-responsive-nav-link :href="route('about')" :active="request()->routeIs('about')">About</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('about')" :active="request()->routeIs('about')">{{ __('About') }}</x-responsive-nav-link>
             @endif
             @if($hasContactRoute)
-                <x-responsive-nav-link :href="route('contact')" :active="request()->routeIs('contact')">Contact</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('contact')" :active="request()->routeIs('contact')">{{ __('Contact') }}</x-responsive-nav-link>
             @endif
 
             @auth
                 @if($isAdmin && $hasAdminDashboardRoute)
                     <div class="pt-2">
                         <a href="{{ route('admin.dashboard') }}" class="btn-emerald w-full py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2">
-                            <span>Admin Dashboard</span>
+                            <span>{{ __('Admin Dashboard') }}</span>
                             <span>&rarr;</span>
                         </a>
                     </div>
                 @elseif($isVendor && $hasVendorDashboardRoute)
                     <div class="pt-2">
                         <a href="{{ route('vendor.dashboard') }}" class="btn-emerald w-full py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2">
-                            <span>Go to Dashboard</span>
+                            <span>{{ __('Go to Dashboard') }}</span>
                             <span>&rarr;</span>
                         </a>
                     </div>
@@ -205,18 +214,18 @@
                     </div>
                 </div>
                 <div class="space-y-1 px-4">
-                    <x-responsive-nav-link :href="route('profile.edit')">My Profile</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('profile.edit')">{{ __('My Profile') }}</x-responsive-nav-link>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="text-red-700 font-bold">
-                            Sign Out
+                            {{ __('Sign Out') }}
                         </x-responsive-nav-link>
                     </form>
                 </div>
             @else
                 <div class="flex gap-3 px-4">
-                    <a href="{{ route('login') }}" class="btn-secondary flex-1 text-center py-2.5">Login</a>
-                    <a href="{{ route('register') }}" class="btn-emerald flex-1 text-center py-2.5">Register</a>
+                    <a href="{{ route('login') }}" class="btn-secondary flex-1 text-center py-2.5">{{ __('Login') }}</a>
+                    <a href="{{ route('register') }}" class="btn-emerald flex-1 text-center py-2.5">{{ __('Register') }}</a>
                 </div>
             @endauth
         </div>

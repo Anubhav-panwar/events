@@ -10,6 +10,36 @@ class Event extends Model
 {
     use HasFactory;
 
+    public const AUDIENCE_KIDS = 'Kids';
+    public const AUDIENCE_TEENS = 'Teens';
+    public const AUDIENCE_ADULTS = 'Adults';
+    public const AUDIENCE_ALL_AGES = 'All Ages';
+
+    public const AUDIENCE_CATEGORIES = [
+        self::AUDIENCE_KIDS,
+        self::AUDIENCE_TEENS,
+        self::AUDIENCE_ADULTS,
+        self::AUDIENCE_ALL_AGES,
+    ];
+
+    public static function normalizeAudienceCategory(string $value): ?string
+    {
+        $normalized = strtolower(trim($value));
+        $map = [
+            'kids' => self::AUDIENCE_KIDS,
+            'children' => self::AUDIENCE_KIDS,
+            'teens' => self::AUDIENCE_TEENS,
+            'teenagers' => self::AUDIENCE_TEENS,
+            'adults' => self::AUDIENCE_ADULTS,
+            'all ages' => self::AUDIENCE_ALL_AGES,
+            'all-ages' => self::AUDIENCE_ALL_AGES,
+            'all_ages' => self::AUDIENCE_ALL_AGES,
+            'all' => self::AUDIENCE_ALL_AGES,
+        ];
+
+        return $map[$normalized] ?? null;
+    }
+
     protected $fillable = [
         'vendor_profile_id',
         'title',
@@ -31,6 +61,7 @@ class Event extends Model
         'is_featured',
         'event_type',
         'base_price',
+        'is_date_confirmed',
         'slug',
         'og_meta',
     ];
@@ -44,6 +75,7 @@ class Event extends Model
         'tags' => 'array',
         'audience' => 'array',
         'is_featured' => 'boolean',
+        'is_date_confirmed' => 'boolean',
         'base_price' => 'decimal:2',
         'og_meta' => 'array',
     ];
@@ -95,5 +127,145 @@ class Event extends Model
     public function reminders()
     {
         return $this->hasMany(EventReminder::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(EventReview::class);
+    }
+
+    public function averageRating(): float
+    {
+        return (float) round($this->reviews()->avg('rating') ?? 0, 1);
+    }
+
+    public function reviewsCount(): int
+    {
+        return (int) $this->reviews()->count();
+    }
+
+    public function getTitleAttribute($value): ?string
+    {
+        return $value ? __($value) : $value;
+    }
+
+    public function getDescriptionAttribute($value): ?string
+    {
+        return $value ? __($value) : $value;
+    }
+
+    public function getVenueNameAttribute($value): ?string
+    {
+        return $value ? __($value) : $value;
+    }
+
+    public function getAddressAttribute($value): ?string
+    {
+        return $value ? __($value) : $value;
+    }
+
+    public function getCityAttribute($value): ?string
+    {
+        return $value ? __($value) : $value;
+    }
+
+    public function getCountryAttribute($value): ?string
+    {
+        return $value ? __($value) : $value;
+    }
+
+    public function isCalendarEligible(): bool
+    {
+        if ($this->status !== 'published') {
+            return false;
+        }
+
+        if (array_key_exists('is_date_confirmed', $this->attributes) && !$this->is_date_confirmed) {
+            return false;
+        }
+
+        if (empty($this->event_date) || empty($this->start_time)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function googleCalendarUrl(): ?string
+    {
+        if (!$this->isCalendarEligible()) {
+            return null;
+        }
+
+        $eventDate = \Carbon\Carbon::parse($this->event_date);
+        $startTimeStr = $this->start_time instanceof \Carbon\Carbon ? $this->start_time->format('H:i') : (string)$this->start_time;
+        $endTimeStr = $this->end_time ? ($this->end_time instanceof \Carbon\Carbon ? $this->end_time->format('H:i') : (string)$this->end_time) : null;
+        $startCarbon = (clone $eventDate)->setTimeFromTimeString($startTimeStr);
+        $endCarbon = $endTimeStr ? (clone $eventDate)->setTimeFromTimeString($endTimeStr) : (clone $startCarbon)->addHours(2);
+
+        $startUtc = $startCarbon->utc()->format('Ymd\THis\Z');
+        $endUtc = $endCarbon->utc()->format('Ymd\THis\Z');
+
+        $location = implode(', ', array_filter([$this->venue_name, $this->address, $this->city, $this->country]));
+        $details = strip_tags($this->description ?? '') . "\n\n" . route('events.show', $this->slug);
+
+        return 'https://calendar.google.com/calendar/render?' . http_build_query([
+            'action' => 'TEMPLATE',
+            'text' => $this->title,
+            'dates' => "{$startUtc}/{$endUtc}",
+            'details' => $details,
+            'location' => $location,
+        ]);
+    }
+
+    public function outlookCalendarUrl(): ?string
+    {
+        if (!$this->isCalendarEligible()) {
+            return null;
+        }
+
+        $eventDate = \Carbon\Carbon::parse($this->event_date);
+        $startTimeStr = $this->start_time instanceof \Carbon\Carbon ? $this->start_time->format('H:i') : (string)$this->start_time;
+        $endTimeStr = $this->end_time ? ($this->end_time instanceof \Carbon\Carbon ? $this->end_time->format('H:i') : (string)$this->end_time) : null;
+        $startCarbon = (clone $eventDate)->setTimeFromTimeString($startTimeStr);
+        $endCarbon = $endTimeStr ? (clone $eventDate)->setTimeFromTimeString($endTimeStr) : (clone $startCarbon)->addHours(2);
+
+        $location = implode(', ', array_filter([$this->venue_name, $this->address, $this->city, $this->country]));
+        $details = strip_tags($this->description ?? '') . "\n\n" . route('events.show', $this->slug);
+
+        return 'https://outlook.live.com/calendar/0/deeplink/compose?' . http_build_query([
+            'path' => '/calendar/action/compose',
+            'rru' => 'addevent',
+            'subject' => $this->title,
+            'startdt' => $startCarbon->toIso8601String(),
+            'enddt' => $endCarbon->toIso8601String(),
+            'body' => $details,
+            'location' => $location,
+        ]);
+    }
+
+    public function yahooCalendarUrl(): ?string
+    {
+        if (!$this->isCalendarEligible()) {
+            return null;
+        }
+
+        $eventDate = \Carbon\Carbon::parse($this->event_date);
+        $startTimeStr = $this->start_time instanceof \Carbon\Carbon ? $this->start_time->format('H:i') : (string)$this->start_time;
+        $endTimeStr = $this->end_time ? ($this->end_time instanceof \Carbon\Carbon ? $this->end_time->format('H:i') : (string)$this->end_time) : null;
+        $startCarbon = (clone $eventDate)->setTimeFromTimeString($startTimeStr);
+        $endCarbon = $endTimeStr ? (clone $eventDate)->setTimeFromTimeString($endTimeStr) : (clone $startCarbon)->addHours(2);
+
+        $location = implode(', ', array_filter([$this->venue_name, $this->address, $this->city, $this->country]));
+        $details = strip_tags($this->description ?? '') . "\n\n" . route('events.show', $this->slug);
+
+        return 'https://calendar.yahoo.com/?' . http_build_query([
+            'v' => 60,
+            'title' => $this->title,
+            'st' => $startCarbon->utc()->format('Ymd\THis\Z'),
+            'et' => $endCarbon->utc()->format('Ymd\THis\Z'),
+            'desc' => $details,
+            'in_loc' => $location,
+        ]);
     }
 }

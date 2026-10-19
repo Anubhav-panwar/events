@@ -72,12 +72,7 @@ class CheckoutController extends Controller
                 status: 'paid',
             );
 
-            $ticket = $order->items->first()?->tickets()->first();
-            if ($ticket) {
-                return redirect()->route('account.tickets.show', $ticket)->with('status', 'Registration complete. Ticket issued.');
-            }
-
-            return redirect()->route('account.tickets.index')->with('status', 'Registration complete.');
+            return redirect()->route('checkout.success', $order)->with('status', __('Registration complete. Ticket issued.'));
         }
 
         $secret = config('services.stripe.secret');
@@ -158,12 +153,9 @@ class CheckoutController extends Controller
             }
         }
 
-        $ticket = $order->items()->with('tickets')->first()?->tickets->first();
-        if ($ticket) {
-            return redirect()->route('account.tickets.show', $ticket)->with('status', 'Payment successful. Ticket issued.');
-        }
+        $order->loadMissing(['event', 'items.ticketType', 'items.tickets', 'user']);
 
-        return redirect()->route('account.tickets.index')->with('status', 'Payment successful.');
+        return view('checkout.success', compact('order'));
     }
 
     public function cancel(Request $request, Order $order)

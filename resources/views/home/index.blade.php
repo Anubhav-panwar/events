@@ -4,35 +4,35 @@
         <div class="app-content relative z-10">
             <div class="grid items-center gap-16 lg:grid-cols-2">
                 <div>
-                    <span class="brand-pill mb-6">Your Local Event Hub</span>
+                    <span class="brand-pill mb-6">{{ __('Your Local Event Hub') }}</span>
                     <h1 class="text-4xl md:text-6xl font-bold leading-tight text-slate-900 tracking-tight">
-                        Discover Events. <br/>
-                        <span class="text-emerald-700">Book Faster. Enjoy More.</span>
+                        {{ __('Discover Events.') }} <br/>
+                        <span class="text-emerald-700">{{ __('Book Faster. Enjoy More.') }}</span>
                     </h1>
                     <p class="mt-6 max-w-xl text-lg text-slate-600 leading-relaxed">
-                        Find events around you or plan ahead for your next trip. Save favourites, share with friends, and get your tickets — all in one place.
+                        {{ __('Find events around you or plan ahead for your next trip. Save favourites, share with friends, and get your tickets — all in one place.') }}
                     </p>
 
                     {{-- Inline Search Bar --}}
                     <form action="{{ route('search') }}" method="GET" class="mt-10 flex flex-col sm:flex-row gap-3 max-w-xl bg-slate-50 p-3 rounded-lg border border-slate-200 shadow-sm">
                         <div class="relative flex-1">
                             <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            <input type="text" name="q" placeholder="What are you looking for?" class="input-field pl-11 shadow-none border-transparent bg-transparent" style="box-shadow: none;">
+                            <input type="text" name="q" placeholder="{{ __('What are you looking for?') }}" class="input-field pl-11 shadow-none border-transparent bg-transparent" style="box-shadow: none;">
                         </div>
                         <div class="relative w-full sm:w-1/3 border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0">
                             <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                            <input type="text" name="place" placeholder="City" class="input-field pl-11 shadow-none border-transparent bg-transparent" style="box-shadow: none;">
+                            <input type="text" name="place" placeholder="{{ __('City') }}" class="input-field pl-11 shadow-none border-transparent bg-transparent" style="box-shadow: none;">
                         </div>
-                        <button type="submit" class="btn-primary shrink-0 w-full sm:w-auto mt-3 sm:mt-0">Search</button>
+                        <button type="submit" class="btn-primary shrink-0 w-full sm:w-auto mt-3 sm:mt-0">{{ __('Search') }}</button>
                     </form>
 
                     <div class="mt-8 flex items-center gap-6">
-                        <a href="{{ route('events.index') }}" class="text-sm font-bold text-emerald-700 hover:text-emerald-800 underline underline-offset-4">Browse all events &rarr;</a>
-                        <a href="{{ route('vendors.index') }}" class="text-sm font-bold text-slate-600 hover:text-slate-900 border-b border-transparent hover:border-slate-900 transition-all">Find vendors</a>
+                        <a href="{{ route('events.index') }}" class="text-sm font-bold text-emerald-700 hover:text-emerald-800 underline underline-offset-4">{{ __('Browse all events') }} &rarr;</a>
+                        <a href="{{ route('vendors.index') }}" class="text-sm font-bold text-slate-600 hover:text-slate-900 border-b border-transparent hover:border-slate-900 transition-all">{{ __('Find vendors') }}</a>
                     </div>
                 </div>
 
-                {{-- Hero Visual (strict image block, no floating shapes) --}}
+                {{-- Hero Visual --}}
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-4">
                         <div class="media-tile aspect-[4/5]">
@@ -51,19 +51,19 @@
             <div class="mt-20 pt-10 border-t border-slate-200 grid grid-cols-2 gap-8 sm:grid-cols-4">
                 <div>
                     <p class="text-3xl font-bold text-slate-900">{{ number_format($stats['events']) }}+</p>
-                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Events</p>
+                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">{{ __('Events') }}</p>
                 </div>
                 <div>
                     <p class="text-3xl font-bold text-slate-900">{{ number_format($stats['vendors']) }}+</p>
-                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Vendors</p>
+                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">{{ __('Vendors') }}</p>
                 </div>
                 <div>
                     <p class="text-3xl font-bold text-slate-900">{{ number_format($stats['cities']) }}+</p>
-                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Cities</p>
+                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">{{ __('Cities') }}</p>
                 </div>
                 <div>
                     <p class="text-3xl font-bold text-slate-900">4.9/5</p>
-                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Rating</p>
+                    <p class="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">{{ __('Rating') }}</p>
                 </div>
             </div>
         </div>
@@ -75,11 +75,11 @@
             <div class="flex items-center gap-3 overflow-x-auto pb-4 hide-scrollbar">
                 <a href="{{ route('events.index') }}" class="btn-slate bg-slate-900 text-white font-bold px-5 py-2.5 rounded shrink-0 flex items-center gap-2 hover:bg-slate-800">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                    All Events
+                    {{ __('All Events') }}
                 </a>
                 @foreach($categories as $cat)
                     <a href="{{ route('events.index', ['category_id' => $cat->id]) }}" class="px-5 py-2.5 rounded border border-slate-200 bg-white text-slate-700 font-bold text-sm shrink-0 hover:border-slate-400 hover:text-slate-900 shadow-sm transition-all">
-                        {{ $cat->name }}
+                        {{ __($cat->name) }}
                     </a>
                 @endforeach
             </div>
@@ -91,10 +91,10 @@
         <div class="app-content">
             <div class="flex items-end justify-between mb-10">
                 <div>
-                    <h2 class="section-header mb-1">Trending Events</h2>
-                    <p class="section-subtitle">Popular picks this week near you</p>
+                    <h2 class="section-header mb-1">{{ __('Trending Events') }}</h2>
+                    <p class="section-subtitle">{{ __('Popular picks this week near you') }}</p>
                 </div>
-                <a href="{{ route('events.index') }}" class="btn-secondary hidden sm:inline-flex">View All</a>
+                <a href="{{ route('events.index') }}" class="btn-secondary hidden sm:inline-flex">{{ __('View All') }}</a>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($upcoming as $event)
@@ -102,18 +102,18 @@
                 @empty
                     <div class="col-span-3 surface border-dashed border-2 bg-slate-50 p-12 text-center shadow-none">
                         <svg class="w-12 h-12 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <h3 class="text-lg font-bold text-slate-900">No upcoming events</h3>
-                        <p class="text-slate-500 mt-1">Check back soon for new listings.</p>
+                        <h3 class="text-lg font-bold text-slate-900">{{ __('No upcoming events') }}</h3>
+                        <p class="text-slate-500 mt-1">{{ __('Check back soon for new listings.') }}</p>
                         @auth
                             @if(auth()->user()->isVendor())
-                                <a href="{{ route('vendor.events.create') }}" class="btn-primary mt-6 inline-flex">Create an Event</a>
+                                <a href="{{ route('vendor.events.create') }}" class="btn-primary mt-6 inline-flex">{{ __('Create an Event') }}</a>
                             @endif
                         @endauth
                     </div>
                 @endforelse
             </div>
             <div class="mt-8 text-center sm:hidden">
-                <a href="{{ route('events.index') }}" class="btn-secondary">View All Events</a>
+                <a href="{{ route('events.index') }}" class="btn-secondary">{{ __('View All Events') }}</a>
             </div>
         </div>
     </section>
@@ -122,8 +122,8 @@
     <section class="section bg-slate-50 border-b border-slate-200">
         <div class="app-content">
             <div class="text-center mb-16">
-                <h2 class="section-header">How Huddle Works</h2>
-                <p class="section-subtitle">A seamless experience for both attendees and organizers.</p>
+                <h2 class="section-header">{{ __('How Huddle Works') }}</h2>
+                <p class="section-subtitle">{{ __('A seamless experience for both attendees and organizers.') }}</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
                 {{-- For Attendees --}}
@@ -132,28 +132,28 @@
                         <div class="w-10 h-10 bg-slate-900 text-white rounded flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         </div>
-                        <h3 class="text-2xl font-bold text-slate-900">For Attendees</h3>
+                        <h3 class="text-2xl font-bold text-slate-900">{{ __('For Attendees') }}</h3>
                     </div>
                     <div class="space-y-8">
                         <div class="flex gap-4">
                             <div class="w-10 h-10 rounded border border-slate-200 bg-white flex items-center justify-center text-slate-700 shrink-0 shadow-sm font-bold">1</div>
                             <div>
-                                <p class="font-bold text-slate-900 text-lg">Search &amp; Explore</p>
-                                <p class="text-slate-600 mt-1">Find events near you or at your next destination using location search and smart filters.</p>
+                                <p class="font-bold text-slate-900 text-lg">{{ __('Search & Explore') }}</p>
+                                <p class="text-slate-600 mt-1">{{ __('Find events near you or at your next destination using location search and smart filters.') }}</p>
                             </div>
                         </div>
                         <div class="flex gap-4">
                             <div class="w-10 h-10 rounded border border-slate-200 bg-white flex items-center justify-center text-slate-700 shrink-0 shadow-sm font-bold">2</div>
                             <div>
-                                <p class="font-bold text-slate-900 text-lg">Save &amp; Share</p>
-                                <p class="text-slate-600 mt-1">Bookmark events to your account, add them to your phone calendar, and share with friends.</p>
+                                <p class="font-bold text-slate-900 text-lg">{{ __('Save & Share') }}</p>
+                                <p class="text-slate-600 mt-1">{{ __('Bookmark events to your account, add them to your phone calendar, and share with friends.') }}</p>
                             </div>
                         </div>
                         <div class="flex gap-4">
                             <div class="w-10 h-10 rounded border border-slate-200 bg-white flex items-center justify-center text-slate-700 shrink-0 shadow-sm font-bold">3</div>
                             <div>
-                                <p class="font-bold text-slate-900 text-lg">Book &amp; Attend</p>
-                                <p class="text-slate-600 mt-1">Buy tickets securely, receive your QR code instantly, and just show up and enjoy.</p>
+                                <p class="font-bold text-slate-900 text-lg">{{ __('Book & Attend') }}</p>
+                                <p class="text-slate-600 mt-1">{{ __('Buy tickets securely, receive your QR code instantly, and just show up and enjoy.') }}</p>
                             </div>
                         </div>
                     </div>
@@ -165,33 +165,33 @@
                         <div class="w-10 h-10 bg-emerald-700 text-white rounded flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         </div>
-                        <h3 class="text-2xl font-bold text-slate-900">For Organizers</h3>
+                        <h3 class="text-2xl font-bold text-slate-900">{{ __('For Organizers') }}</h3>
                     </div>
                     <div class="space-y-8">
                         <div class="flex gap-4">
                             <div class="w-10 h-10 rounded border border-emerald-200 bg-white flex items-center justify-center text-emerald-700 shrink-0 shadow-sm font-bold">1</div>
                             <div>
-                                <p class="font-bold text-slate-900 text-lg">Create Your Profile</p>
-                                <p class="text-slate-600 mt-1">Set up your vendor page with gallery, opening hours, map location, and social links.</p>
+                                <p class="font-bold text-slate-900 text-lg">{{ __('Create Your Profile') }}</p>
+                                <p class="text-slate-600 mt-1">{{ __('Set up your vendor page with gallery, opening hours, map location, and social links.') }}</p>
                             </div>
                         </div>
                         <div class="flex gap-4">
                             <div class="w-10 h-10 rounded border border-emerald-200 bg-white flex items-center justify-center text-emerald-700 shrink-0 shadow-sm font-bold">2</div>
                             <div>
-                                <p class="font-bold text-slate-900 text-lg">Post Events</p>
-                                <p class="text-slate-600 mt-1">Create rich event listings with media, date &amp; time, audience tags, and ticket types.</p>
+                                <p class="font-bold text-slate-900 text-lg">{{ __('Post Events') }}</p>
+                                <p class="text-slate-600 mt-1">{{ __('Create rich event listings with media, date & time, audience tags, and ticket types.') }}</p>
                             </div>
                         </div>
                         <div class="flex gap-4">
                             <div class="w-10 h-10 rounded border border-emerald-200 bg-white flex items-center justify-center text-emerald-700 shrink-0 shadow-sm font-bold">3</div>
                             <div>
-                                <p class="font-bold text-slate-900 text-lg">Manage Tickets</p>
-                                <p class="text-slate-600 mt-1">Track orders, manage ticket inventory, and validate attendees with QR code check-in.</p>
+                                <p class="font-bold text-slate-900 text-lg">{{ __('Manage Tickets') }}</p>
+                                <p class="text-slate-600 mt-1">{{ __('Track orders, manage ticket inventory, and validate attendees with QR code check-in.') }}</p>
                             </div>
                         </div>
                     </div>
                     @guest
-                        <a href="{{ route('register') }}" class="btn-emerald mt-8 w-full text-center block">Join as an Organizer</a>
+                        <a href="{{ route('register') }}" class="btn-emerald mt-8 w-full text-center block">{{ __('Join as an Organizer') }}</a>
                     @endguest
                 </div>
             </div>
@@ -204,23 +204,23 @@
         <div class="app-content relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
             <div class="max-w-2xl">
                 <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30 uppercase tracking-wider">
-                    For Event Hosts &amp; Venues
+                    {{ __('For Event Hosts & Venues') }}
                 </span>
                 <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-3">
-                    Are You an Event Organizer? Scale Your Audience on Huddle.
+                    {{ __('Are You an Event Organizer? Scale Your Audience on Huddle.') }}
                 </h3>
                 <p class="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
-                    Publish your listings in minutes, configure multiple ticket tiers, collect payments directly via Stripe, and scan tickets at the door with our mobile QR check-in tool.
+                    {{ __('Publish your listings in minutes, configure multiple ticket tiers, collect payments directly via Stripe, and scan tickets at the door with our mobile QR check-in tool.') }}
                 </p>
                 <div class="mt-4 flex flex-wrap items-center gap-6 text-xs text-slate-300">
-                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> 0% Fees on Free Community Events</span>
-                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> Direct Stripe Payouts</span>
-                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> Real-Time Sales CRM</span>
+                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> {{ __('0% Fees on Free Community Events') }}</span>
+                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> {{ __('Direct Stripe Payouts') }}</span>
+                    <span class="flex items-center gap-1.5"><strong class="text-emerald-400">&check;</strong> {{ __('Real-Time Sales CRM') }}</span>
                 </div>
             </div>
             <div class="shrink-0">
                 <a href="{{ route('register') }}" class="btn-emerald px-8 py-3.5 text-sm font-bold shadow-xl shadow-emerald-950/40 inline-flex items-center gap-2">
-                    <span>Create Organizer Profile</span>
+                    <span>{{ __('Create Organizer Profile') }}</span>
                     <span>&rarr;</span>
                 </a>
             </div>
@@ -231,9 +231,9 @@
     <section class="section bg-white border-b border-slate-200">
         <div class="app-content">
             <div class="text-center max-w-2xl mx-auto mb-14">
-                <span class="brand-pill">Verified Reviews</span>
-                <h2 class="section-header mt-3">Loved by Attendees &amp; Organizers</h2>
-                <p class="section-subtitle">Real experiences from our active community members.</p>
+                <span class="brand-pill">{{ __('Verified Reviews') }}</span>
+                <h2 class="section-header mt-3">{{ __('Loved by Attendees & Organizers') }}</h2>
+                <p class="section-subtitle">{{ __('Real experiences from our active community members.') }}</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -243,14 +243,14 @@
                             ★★★★★
                         </div>
                         <p class="text-slate-700 text-sm leading-relaxed italic">
-                            "The instant QR check-in made our festival entrance completely painless. Zero lines, zero paper. Booking tickets took under a minute with Apple Pay."
+                            "{{ __('The instant QR check-in made our festival entrance completely painless. Zero lines, zero paper. Booking tickets took under a minute with Apple Pay.') }}"
                         </p>
                     </div>
                     <div class="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
                         <img class="w-10 h-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Marcus Vance">
                         <div>
                             <p class="text-xs font-bold text-slate-900">Marcus Vance</p>
-                            <p class="text-[11px] text-slate-500">Tech Summit Attendee &bull; San Francisco</p>
+                            <p class="text-[11px] text-slate-500">{{ __('Tech Summit Attendee • San Francisco') }}</p>
                         </div>
                     </div>
                 </div>
@@ -261,14 +261,14 @@
                             ★★★★★
                         </div>
                         <p class="text-slate-700 text-sm leading-relaxed italic">
-                            "As an indie jazz producer, Huddle's Stripe integration and ticket CRM allowed us to sell out 400 seats in 48 hours without paying exorbitant platform cuts."
+                            "{{ __('As an indie jazz producer, Huddle\'s Stripe integration and ticket CRM allowed us to sell out 400 seats in 48 hours without paying exorbitant platform cuts.') }}"
                         </p>
                     </div>
                     <div class="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
                         <img class="w-10 h-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80" alt="Elena Rostova">
                         <div>
                             <p class="text-xs font-bold text-slate-900">Elena Rostova</p>
-                            <p class="text-[11px] text-slate-500">Host, Jazz on the Water &bull; Boston</p>
+                            <p class="text-[11px] text-slate-500">{{ __('Host, Jazz on the Water • Boston') }}</p>
                         </div>
                     </div>
                 </div>
@@ -279,14 +279,14 @@
                             ★★★★★
                         </div>
                         <p class="text-slate-700 text-sm leading-relaxed italic">
-                            "Finding high quality creative workshops used to take hours of scrolling. Huddle curates the best verified events and the calendar sync is brilliant."
+                            "{{ __('Finding high quality creative workshops used to take hours of scrolling. Huddle curates the best verified events and the calendar sync is brilliant.') }}"
                         </p>
                     </div>
                     <div class="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
                         <img class="w-10 h-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80" alt="David Chen">
                         <div>
                             <p class="text-xs font-bold text-slate-900">David Chen</p>
-                            <p class="text-[11px] text-slate-500">Design Masterclass Attendee &bull; New York</p>
+                            <p class="text-[11px] text-slate-500">{{ __('Design Masterclass Attendee • New York') }}</p>
                         </div>
                     </div>
                 </div>
@@ -302,31 +302,31 @@
                     <div class="w-12 h-12 bg-slate-800 rounded flex items-center justify-center border border-slate-700 text-emerald-400 mb-5">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-white">Verified Organisers</h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">Trust who you book with. Profiles include organiser details, event history, and real follower counts.</p>
+                    <h3 class="text-xl font-bold mb-3 text-white">{{ __('Verified Organisers') }}</h3>
+                    <p class="text-slate-400 leading-relaxed text-sm">{{ __('Trust who you book with. Profiles include organiser details, event history, and real follower counts.') }}</p>
                 </div>
                 <div>
                     <div class="w-12 h-12 bg-slate-800 rounded flex items-center justify-center border border-slate-700 text-emerald-400 mb-5">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-white">Secure Ticketing</h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">Stripe-powered checkout, instant ticket confirmation, and smooth QR-based event entry.</p>
+                    <h3 class="text-xl font-bold mb-3 text-white">{{ __('Secure Ticketing') }}</h3>
+                    <p class="text-slate-400 leading-relaxed text-sm">{{ __('Stripe-powered checkout, instant ticket confirmation, and smooth QR-based event entry.') }}</p>
                 </div>
                 <div>
                     <div class="w-12 h-12 bg-slate-800 rounded flex items-center justify-center border border-slate-700 text-emerald-400 mb-5">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-white">Location-Aware</h3>
-                    <p class="text-slate-400 leading-relaxed text-sm">Search events near your current location or plan ahead for any city in the world.</p>
+                    <h3 class="text-xl font-bold mb-3 text-white">{{ __('Location-Aware') }}</h3>
+                    <p class="text-slate-400 leading-relaxed text-sm">{{ __('Search events near your current location or plan ahead for any city in the world.') }}</p>
                 </div>
             </div>
 
             <div class="pt-16 max-w-3xl">
-                <h3 class="text-3xl font-bold">Never Miss an Event Again</h3>
-                <p class="mt-4 text-slate-400 text-lg">Subscribe for weekly recommendations and exclusive offers.</p>
+                <h3 class="text-3xl font-bold">{{ __('Never Miss an Event Again') }}</h3>
+                <p class="mt-4 text-slate-400 text-lg">{{ __('Subscribe for weekly recommendations and exclusive offers.') }}</p>
                 <form class="mt-8 flex flex-col sm:flex-row gap-3">
-                    <input type="email" placeholder="your@email.com" class="flex-1 rounded bg-slate-800 border-none px-5 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <button type="button" class="btn-emerald font-bold px-8">Subscribe</button>
+                    <input type="email" placeholder="{{ __('your@email.com') }}" class="flex-1 rounded bg-slate-800 border-none px-5 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="button" class="btn-emerald font-bold px-8">{{ __('Subscribe') }}</button>
                 </form>
             </div>
         </div>

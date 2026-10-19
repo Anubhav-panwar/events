@@ -14,6 +14,10 @@ class EventReminderController extends Controller
         abort_unless($event, 404);
         $this->authorize('view', $event);
 
+        if ($request->user() && $request->user()->isBlocked()) {
+            abort(403, __('Your account has been blocked by administrators. Setting reminders is restricted.'));
+        }
+
         $data = $request->validate([
             'minutes_before' => ['nullable', 'integer', 'min:15', 'max:10080'],
             'channel' => ['nullable', 'in:calendar,email,push'],

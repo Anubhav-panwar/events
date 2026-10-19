@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\Storage;
 
 class VendorService
 {
-    public function __construct(private VendorRepository $repo)
-    {
+    public function __construct(
+        private VendorRepository $repo,
+        private GeocodingService $geocodingService
+    ) {
     }
 
     public function getOrCreateProfile(User $user, array $data = [], array $mediaFiles = []): VendorProfile
@@ -24,6 +26,21 @@ class VendorService
                 }
                 return !empty($row['closed']) || (!empty($row['open']) && !empty($row['close']));
             }));
+        }
+
+        if (empty($data['latitude']) || empty($data['longitude'])) {
+            $parts = array_filter([
+                $data['address'] ?? null,
+                $data['city'] ?? null,
+                $data['country'] ?? null,
+            ]);
+            if (!empty($parts)) {
+                $geo = $this->geocodingService->geocode(implode(', ', $parts));
+                if ($geo) {
+                    $data['latitude'] = $geo['lat'];
+                    $data['longitude'] = $geo['lng'];
+                }
+            }
         }
 
         $profile = $this->repo->createOrUpdate($user, $data);

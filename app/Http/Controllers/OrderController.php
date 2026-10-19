@@ -26,6 +26,9 @@ class OrderController extends Controller
         if (!$user) {
             return redirect()->route('login');
         }
+        if ($user->isBlocked()) {
+            abort(403, __('Your account has been blocked by administrators. Purchases are restricted.'));
+        }
         $event = $this->repo->findBySlug($slug);
         abort_unless($event, 404);
         $ticketType = TicketType::where('event_id', $event->id)->findOrFail($request->integer('ticket_type_id'));
@@ -56,9 +59,18 @@ class OrderController extends Controller
                 ]);
                 $ticketType->increment('sold', $qty);
                 for ($i = 0; $i < $qty; $i++) {
+                    $code = \App\Models\Ticket::generateUniqueCode($event->id, $ticketType->tier);
                     \App\Models\Ticket::create([
                         'order_item_id' => $item->id,
-                        'code' => 'EV'.$event->id.'-'.strtoupper(\Illuminate\Support\Str::random(8)),
+                        'code' => $code,
+                        'attendee_name' => $user->name,
+                        'qr_data' => json_encode([
+                            'ticket_code' => $code,
+                            'order_id' => $order->id,
+                            'event_id' => $event->id,
+                            'tier' => $ticketType->name,
+                            'issued_at' => now()->toIso8601String(),
+                        ], JSON_UNESCAPED_SLASHES),
                         'issued_at' => now(),
                     ]);
                 }

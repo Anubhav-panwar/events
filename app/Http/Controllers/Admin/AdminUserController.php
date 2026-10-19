@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserBlockRecord;
 use App\Models\VendorProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -198,5 +200,122 @@ class AdminUserController extends Controller
 
         return redirect()->route('admin.dashboard', ['tab' => 'users'])
             ->with('success', "User '{$userName}' has been permanently deleted.");
+    }
+
+    /**
+     * Block user, terminate existing sessions, mute reminders, and record audit trail.
+     */
+    public function block(Request $request, User $user)
+    {
+        Gate::authorize('admin');
+
+        // Safeguard: Cannot block own logged-in admin account
+        if (auth()->id() === $user->id) {
+            return back()->with('error', __('Security warning: You cannot block your own admin account.'));
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $reason = trim($validated['reason']);
+
+        // 1. Mark user as blocked
+        $user->update([
+            'is_blocked' => true,
+            'blocked_at' => now(),
+            'blocked_reason' => $reason,
+            'blocked_by_id' => auth()->id(),
+            'remember_token' => null,
+        ]);
+
+        // 2. Terminate all active database sessions immediately
+        try {
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+        } catch (\Throwable $e) {
+            // In case driver does not use database sessions table
+        }
+
+        // 3. Mute / clear upcoming event reminders for this user
+        $user->eventReminders()->delete();
+
+        // 4. Create administrative audit trail record
+        UserBlockRecord::create([
+            'user_id' => $user->id,
+            'admin_id' => auth()->id(),
+            'action' => 'blocked',
+            'reason' => $reason,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return back()->with('success', __("User ':name' has been blocked. Active sessions were terminated and reminders muted.", ['name' => $user->name]));
+    }
+
+    /**
+     * Unblock user and record administrative audit trail.
+     */
+    public function unblock(Request $request, User $user)
+    {
+        Gate::authorize('admin');
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $note = filled($request->reason) ? trim($request->reason) : __('Account unblocked and restored to active status by administrator.');
+
+        // 1. Mark user as active
+        $user->update([
+            'is_blocked' => false,
+            'blocked_at' => null,
+            'blocked_reason' => null,
+            'blocked_by_id' => null,
+        ]);
+
+        // 2. Create administrative audit trail record
+        UserBlockRecord::create([
+            'user_id' => $user->id,
+            'admin_id' => auth()->id(),
+            'action' => 'unblocked',
+            'reason' => $note,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return back()->with('success', __("User ':name' has been unblocked successfully.", ['name' => $user->name]));
+    }
+
+    /**
+     * Retrieve administrative block/unblock audit history for modal
+     */
+    public function blockHistory(User $user)
+    {
+        Gate::authorize('admin');
+
+        $records = $user->blockRecords()->with('admin:id,name,email')->get()->map(function ($r) {
+            return [
+                'id' => $r->id,
+                'action' => $r->action,
+                'reason' => $r->reason,
+                'admin_name' => $r->admin?->name ?? __('System Administrator'),
+                'admin_email' => $r->admin?->email,
+                'created_at' => $r->created_at->format('M j, Y h:i A'),
+                'created_at_diff' => $r->created_at->diffForHumans(),
+                'ip_address' => $r->ip_address,
+            ];
+        });
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'is_blocked' => $user->is_blocked,
+                'blocked_at' => $user->blocked_at?->format('M j, Y h:i A'),
+                'blocked_reason' => $user->blocked_reason,
+            ],
+            'records' => $records,
+        ]);
     }
 }

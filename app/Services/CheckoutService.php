@@ -36,6 +36,12 @@ class CheckoutService
             $paymentProvider,
             $status
         ) {
+            if ($user->isBlocked()) {
+                throw ValidationException::withMessages([
+                    'user' => __('Your account has been blocked by administrators. Booking is restricted.'),
+                ]);
+            }
+
             $ticketType = TicketType::query()
                 ->where('event_id', $event->id)
                 ->lockForUpdate()
@@ -45,12 +51,15 @@ class CheckoutService
             $this->ensureAvailability($event, $ticketType, $quantity);
 
             $total = $quantity * (float) $ticketType->price;
+            $feePercent = (float) config('events.platform_fee_percentage', 5.0);
+            $platformFee = ($total > 0 && $status === 'paid') ? round($total * ($feePercent / 100), 2) : 0.00;
 
             $order = Order::create([
                 'user_id' => $user->id,
                 'vendor_profile_id' => $event->vendorProfile->id,
                 'event_id' => $event->id,
                 'total' => $total,
+                'platform_fee' => $platformFee,
                 'currency' => $ticketType->currency,
                 'status' => $status,
                 'payment_provider' => $paymentProvider,
@@ -83,14 +92,37 @@ class CheckoutService
             return $order;
         }
 
+        $feePercent = (float) config('events.platform_fee_percentage', 5.0);
+        $platformFee = (float) $order->total > 0 ? round(((float) $order->total) * ($feePercent / 100), 2) : 0.00;
+
         $order->update([
             'status' => 'paid',
             'paid_at' => now(),
+            'platform_fee' => $platformFee,
             'payment_intent_id' => $paymentIntentId ?: $order->payment_intent_id,
             'failed_reason' => null,
         ]);
 
         $this->ticketService->issueForOrder($order->fresh('items.ticketType.event'));
+
+        return $order->fresh('items.ticketType.event');
+    }
+
+    public function refund(Order $order, ?float $amount = null): Order
+    {
+        if ($order->status === 'refunded') {
+            return $order;
+        }
+
+        $refundAmount = $amount !== null ? min((float) $order->total, max(0.0, $amount)) : (float) $order->total;
+
+        DB::transaction(function () use ($order, $refundAmount) {
+            $order->update([
+                'status' => 'refunded',
+                'refunded_amount' => $refundAmount,
+                'refunded_at' => now(),
+            ]);
+        });
 
         return $order->fresh('items.ticketType.event');
     }
@@ -141,6 +173,12 @@ class CheckoutService
 
     private function ensureAvailability(Event $event, TicketType $ticketType, int $quantity): void
     {
+        if ($ticketType->is_active === false) {
+            throw ValidationException::withMessages([
+                'ticket_type_id' => 'This ticket category is currently unavailable for booking.',
+            ]);
+        }
+
         if ($quantity < 1) {
             throw ValidationException::withMessages([
                 'quantity' => 'Quantity must be at least 1.',

@@ -14,6 +14,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
+
+        $middleware->encryptCookies(except: [
+            'locale',
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\EnsureUserNotBlocked::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

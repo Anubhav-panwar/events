@@ -1,21 +1,21 @@
-<x-crm-layout title="Admin Dashboard" role="admin">
+<x-crm-layout title="{{ __('Admin Dashboard') }}" role="admin">
     <x-slot name="breadcrumb">
         <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span>Admin CRM</span>
+            <span>{{ __('Admin CRM') }}</span>
             <span>/</span>
             <span class="text-slate-900 font-bold capitalize">
                 @if($tab === 'users')
-                    User Management
+                    {{ __('User Management') }}
                 @elseif($tab === 'categories')
-                    Categories Management
+                    {{ __('Categories') }}
                 @elseif($tab === 'events')
-                    Platform Events
+                    {{ __('Platform Events') }}
                 @elseif($tab === 'vendors')
-                    Vendors Directory
+                    {{ __('Vendors Directory') }}
                 @elseif($tab === 'financials')
-                    Financial Volume
+                    {{ __('Financial Volume') }}
                 @else
-                    Platform Overview
+                    {{ __('Overview') }}
                 @endif
             </span>
         </div>
@@ -30,38 +30,38 @@
                 <div>
                     <div class="flex items-center gap-2 mb-2">
                         <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
-                            Super Admin Console
+                            {{ __('Super Admin Console') }}
                         </span>
                         <span class="text-xs text-slate-400">{{ now()->format('l, F j, Y') }}</span>
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                         @if($tab === 'users')
-                            User &amp; Access Management
+                            {{ __('User & Access Management') }}
                         @elseif($tab === 'categories')
-                            Category &amp; Taxonomy Management
+                            {{ __('Category & Taxonomy Management') }}
                         @elseif($tab === 'events')
-                            Platform Events Management
+                            {{ __('Platform Events Management') }}
                         @elseif($tab === 'vendors')
-                            Vendors Directory &amp; Moderation
+                            {{ __('Vendors Directory & Moderation') }}
                         @elseif($tab === 'financials')
-                            Financial Analytics &amp; Volume
+                            {{ __('Financial Analytics & Volume') }}
                         @else
-                            System Platform Overview
+                            {{ __('System Platform Overview') }}
                         @endif
                     </h1>
                     <p class="text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
                         @if($tab === 'users')
-                            Manage customer, vendor, and administrator accounts, assign permissions, reset credentials, or provision new vendor storefronts.
+                            {{ __('Manage customer, vendor, and administrator accounts, assign permissions, reset credentials, or provision new vendor storefronts.') }}
                         @elseif($tab === 'categories')
-                            Create and manage event categories and taxonomies used across the marketplace and vendor onboarding.
+                            {{ __('Create and manage event categories and taxonomies used across the marketplace and vendor onboarding.') }}
                         @elseif($tab === 'events')
-                            Monitor and manage all {{ $kpis['total_events'] }} events submitted by registered vendors across all categories.
+                            {{ __('Monitor and manage all :count events submitted by registered vendors across all categories.', ['count' => $kpis['total_events']]) }}
                         @elseif($tab === 'vendors')
-                            Oversee approved vendor organizations, business profiles, and marketplace storefronts.
+                            {{ __('Oversee approved vendor organizations, business profiles, and marketplace storefronts.') }}
                         @elseif($tab === 'financials')
-                            Review gross marketplace transaction volume, ticket receipts, and booking orders.
+                            {{ __('Review gross marketplace transaction volume, ticket receipts, and booking orders.') }}
                         @else
-                            Full administrative oversight for marketplace events, vendor verifications, attendee ticket orders, and platform revenue.
+                            {{ __('Full administrative oversight for marketplace events, vendor verifications, attendee ticket orders, and platform revenue.') }}
                         @endif
                     </p>
                 </div>
@@ -70,27 +70,27 @@
                 <div class="flex flex-wrap items-center gap-2 shrink-0">
                     <a href="{{ route('admin.dashboard', ['tab' => 'overview']) }}"
                        class="text-xs py-2 px-3.5 rounded-lg font-bold transition-all {{ $tab === 'overview' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white' }}">
-                        Overview
+                        {{ __('Overview') }}
                     </a>
                     <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}"
                        class="text-xs py-2 px-3.5 rounded-lg font-bold transition-all {{ $tab === 'users' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white' }}">
-                        Users ({{ $kpis['total_users'] }})
+                        {{ __('Users') }} ({{ $kpis['total_users'] }})
                     </a>
                     <a href="{{ route('admin.dashboard', ['tab' => 'events']) }}"
                        class="text-xs py-2 px-3.5 rounded-lg font-bold transition-all {{ $tab === 'events' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white' }}">
-                        Events ({{ $kpis['total_events'] }})
+                        {{ __('Events') }} ({{ $kpis['total_events'] }})
                     </a>
                     <a href="{{ route('admin.dashboard', ['tab' => 'categories']) }}"
                        class="text-xs py-2 px-3.5 rounded-lg font-bold transition-all {{ $tab === 'categories' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white' }}">
-                        Categories ({{ $kpis['total_categories'] }})
+                        {{ __('Categories') }} ({{ $kpis['total_categories'] }})
                     </a>
                     <a href="{{ route('admin.dashboard', ['tab' => 'vendors']) }}"
                        class="text-xs py-2 px-3.5 rounded-lg font-bold transition-all {{ $tab === 'vendors' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white' }}">
-                        Vendors ({{ $kpis['total_vendors'] }})
+                        {{ __('Vendors') }} ({{ $kpis['total_vendors'] }})
                     </a>
                     <a href="{{ route('admin.dashboard', ['tab' => 'financials']) }}"
                        class="text-xs py-2 px-3.5 rounded-lg font-bold transition-all {{ $tab === 'financials' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white' }}">
-                        Volume (${{ number_format($kpis['revenue'], 0) }})
+                        {{ __('Volume') }} (${{ number_format($kpis['revenue'], 0) }})
                     </a>
                 </div>
             </div>
@@ -101,52 +101,57 @@
             {{-- Users --}}
             <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}" class="crm-card p-5 hover:border-slate-400 transition-all block group {{ $tab === 'users' ? 'ring-2 ring-emerald-500/20 border-emerald-500' : '' }}">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-slate-700">Registered Users</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-slate-700">{{ __('Registered Users') }}</span>
                     <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline gap-2">
                     <span class="text-3xl font-bold text-slate-950">{{ number_format($kpis['total_users']) }}</span>
-                    <span class="text-xs font-semibold text-slate-500">Accounts</span>
+                    <span class="text-xs font-semibold text-slate-500">{{ __('Accounts') }}</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">{{ $kpis['vendor_users'] }} vendors &bull; {{ $kpis['admin_users'] }} admins &rarr;</p>
+                <p class="text-xs text-slate-500 mt-2">
+                    <span class="text-emerald-700 font-semibold">{{ $kpis['active_accounts'] ?? $kpis['total_users'] }} {{ __('active') }}</span>
+                    &bull;
+                    <span class="{{ ($kpis['blocked_users'] ?? 0) > 0 ? 'text-rose-600 font-bold' : 'text-slate-400' }}">{{ $kpis['blocked_users'] ?? 0 }} {{ __('blocked') }}</span>
+                    &rarr;
+                </p>
             </a>
 
             {{-- Vendors --}}
             <a href="{{ route('admin.dashboard', ['tab' => 'vendors']) }}" class="crm-card p-5 hover:border-emerald-400 transition-all block group {{ $tab === 'vendors' ? 'ring-2 ring-emerald-500/20 border-emerald-500' : '' }}">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700">Vendors</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700">{{ __('Vendors') }}</span>
                     <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline gap-2">
                     <span class="text-3xl font-bold text-slate-950">{{ number_format($kpis['total_vendors']) }}</span>
-                    <span class="text-xs font-semibold text-emerald-600">{{ $kpis['approved_vendors'] }} approved</span>
+                    <span class="text-xs font-semibold text-emerald-600">{{ $kpis['approved_vendors'] }} {{ __('approved') }}</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">Active business accounts &rarr;</p>
+                <p class="text-xs text-slate-500 mt-2">{{ __('Active business accounts') }} &rarr;</p>
             </a>
 
             {{-- Events --}}
             <a href="{{ route('admin.dashboard', ['tab' => 'events']) }}" class="crm-card p-5 hover:border-teal-400 transition-all block group {{ $tab === 'events' ? 'ring-2 ring-teal-500/20 border-teal-500' : '' }}">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-teal-700">Platform Events</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-teal-700">{{ __('Platform Events') }}</span>
                     <div class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline gap-2">
                     <span class="text-3xl font-bold text-slate-950">{{ number_format($kpis['total_events']) }}</span>
-                    <span class="text-xs font-semibold text-teal-600">{{ $kpis['published_events'] }} published</span>
+                    <span class="text-xs font-semibold text-teal-600">{{ $kpis['published_events'] }} {{ __('published') }}</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">Active marketplace listings &rarr;</p>
+                <p class="text-xs text-slate-500 mt-2">{{ __('Active marketplace listings') }} &rarr;</p>
             </a>
 
             {{-- Revenue --}}
             <a href="{{ route('admin.dashboard', ['tab' => 'financials']) }}" class="crm-card p-5 hover:border-purple-400 transition-all block group {{ $tab === 'financials' ? 'ring-2 ring-purple-500/20 border-purple-500' : '' }}">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-purple-700">Total Volume</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-purple-700">{{ __('Total Volume') }}</span>
                     <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
@@ -155,7 +160,7 @@
                     <span class="text-3xl font-bold text-slate-950">${{ number_format($kpis['revenue'], 2) }}</span>
                     <span class="text-xs font-bold text-slate-500">USD</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">From {{ $kpis['paid_orders'] }} paid bookings &rarr;</p>
+                <p class="text-xs text-slate-500 mt-2">{{ __('From') }} {{ $kpis['paid_orders'] }} {{ __('paid bookings') }} &rarr;</p>
             </a>
         </div>
 
@@ -168,11 +173,11 @@
                 <div class="crm-card p-6 lg:col-span-2 space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div>
-                            <h2 class="text-base font-bold text-slate-950">Recent Platform Events</h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Latest listings created by vendors across the platform.</p>
+                            <h2 class="text-base font-bold text-slate-950">{{ __('Recent Platform Events') }}</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ __('Latest listings created by vendors across the platform.') }}</p>
                         </div>
                         <a href="{{ route('admin.dashboard', ['tab' => 'events']) }}" class="text-xs font-bold text-emerald-700 hover:underline">
-                            View All ({{ $kpis['total_events'] }}) &rarr;
+                            {{ __('View All') }} ({{ $kpis['total_events'] }}) &rarr;
                         </a>
                     </div>
 
@@ -180,11 +185,11 @@
                         <table class="min-w-full text-left text-xs">
                             <thead>
                                 <tr class="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
-                                    <th class="pb-3 pr-3">Event</th>
-                                    <th class="pb-3 pr-3">Vendor</th>
-                                    <th class="pb-3 pr-3">Date</th>
-                                    <th class="pb-3 pr-3">Status</th>
-                                    <th class="pb-3 text-right">Price</th>
+                                    <th class="pb-3 pr-3">{{ __('Event') }}</th>
+                                    <th class="pb-3 pr-3">{{ __('Vendor') }}</th>
+                                    <th class="pb-3 pr-3">{{ __('Date') }}</th>
+                                    <th class="pb-3 pr-3">{{ __('Status') }}</th>
+                                    <th class="pb-3 text-right">{{ __('Price') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -211,21 +216,21 @@
                                         <td class="py-3 pr-3 whitespace-nowrap">
                                             @if($event->status === 'published')
                                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 text-[10px]">
-                                                    Live
+                                                    {{ __('Live') }}
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold border border-amber-200 text-[10px]">
-                                                    Draft
+                                                    {{ __('Draft') }}
                                                 </span>
                                             @endif
                                         </td>
                                         <td class="py-3 text-right font-bold text-slate-900 text-xs">
-                                            {{ $event->event_type === 'free' ? 'FREE' : '$' . number_format($event->base_price, 2) }}
+                                            {{ $event->event_type === 'free' ? __('FREE') : '$' . number_format($event->base_price, 2) }}
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="py-8 text-center text-slate-400">No events on the platform yet.</td>
+                                        <td colspan="5" class="py-8 text-center text-slate-400">{{ __('No events on the platform yet.') }}</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -237,11 +242,11 @@
                 <div class="crm-card p-6 space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div>
-                            <h2 class="text-base font-bold text-slate-950">Active Vendors</h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Approved business profiles</p>
+                            <h2 class="text-base font-bold text-slate-950">{{ __('Active Vendors') }}</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ __('Approved business profiles') }}</p>
                         </div>
                         <a href="{{ route('admin.dashboard', ['tab' => 'vendors']) }}" class="text-xs font-bold text-emerald-700 hover:underline">
-                            Directory &rarr;
+                            {{ __('Directory') }} &rarr;
                         </a>
                     </div>
 
@@ -291,44 +296,69 @@
                 </div>
 
                 {{-- Role Quick Filters & Search Form --}}
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    {{-- Role Pills --}}
-                    <div class="flex flex-wrap items-center gap-1.5">
-                        <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}"
-                           class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100' }}">
-                            All Accounts ({{ $kpis['total_users'] }})
-                        </a>
-                        <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => 'user']) }}"
-                           class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'user' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100' }}">
-                            Customers ({{ $kpis['customer_users'] }})
-                        </a>
-                        <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => 'vendor']) }}"
-                           class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'vendor' ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs' : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50' }}">
-                            Vendors &amp; Hosts ({{ $kpis['vendor_users'] }})
-                        </a>
-                        <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => 'admin']) }}"
-                           class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'admin' ? 'bg-purple-700 text-white border-purple-700 shadow-xs' : 'bg-white text-purple-800 border-purple-200 hover:bg-purple-50' }}">
-                            Super Admins ({{ $kpis['admin_users'] }})
-                        </a>
+                <div class="flex flex-col gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                        {{-- Role Pills --}}
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">{{ __('Role') }}:</span>
+                            <a href="{{ route('admin.dashboard', ['tab' => 'users', 'account_status' => $accountStatus]) }}"
+                               class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100' }}">
+                                All Roles ({{ $kpis['total_users'] }})
+                            </a>
+                            <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => 'user', 'account_status' => $accountStatus]) }}"
+                               class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'user' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100' }}">
+                                Customers ({{ $kpis['customer_users'] }})
+                            </a>
+                            <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => 'vendor', 'account_status' => $accountStatus]) }}"
+                               class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'vendor' ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs' : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50' }}">
+                                Vendors &amp; Hosts ({{ $kpis['vendor_users'] }})
+                            </a>
+                            <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => 'admin', 'account_status' => $accountStatus]) }}"
+                               class="text-xs font-bold py-1.5 px-3 rounded-lg border transition-all {{ $roleFilter === 'admin' ? 'bg-purple-700 text-white border-purple-700 shadow-xs' : 'bg-white text-purple-800 border-purple-200 hover:bg-purple-50' }}">
+                                Super Admins ({{ $kpis['admin_users'] }})
+                            </a>
+                        </div>
+
+                        {{-- Search Form --}}
+                        <form method="GET" action="{{ route('admin.dashboard') }}" class="flex items-center gap-2">
+                            <input type="hidden" name="tab" value="users">
+                            @if($roleFilter !== 'all')
+                                <input type="hidden" name="role" value="{{ $roleFilter }}">
+                            @endif
+                            @if($accountStatus !== 'all')
+                                <input type="hidden" name="account_status" value="{{ $accountStatus }}">
+                            @endif
+                            <div class="relative min-w-[220px]">
+                                <input type="text" name="q" value="{{ $search }}"
+                                       placeholder="Search name, email, reason..."
+                                       class="w-full text-xs rounded-lg border border-slate-200 pl-8 pr-3 py-1.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <button type="submit" class="btn-secondary text-xs py-1.5 px-3">Search</button>
+                            @if($search !== '' || $roleFilter !== 'all' || $accountStatus !== 'all')
+                                <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}" class="text-xs text-slate-500 hover:text-slate-800 font-medium ml-1">Reset</a>
+                            @endif
+                        </form>
                     </div>
 
-                    {{-- Search Form --}}
-                    <form method="GET" action="{{ route('admin.dashboard') }}" class="flex items-center gap-2">
-                        <input type="hidden" name="tab" value="users">
-                        @if($roleFilter !== 'all')
-                            <input type="hidden" name="role" value="{{ $roleFilter }}">
-                        @endif
-                        <div class="relative min-w-[220px]">
-                            <input type="text" name="q" value="{{ $search }}"
-                                   placeholder="Search name, email, vendor..."
-                                   class="w-full text-xs rounded-lg border border-slate-200 pl-8 pr-3 py-1.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
-                        <button type="submit" class="btn-secondary text-xs py-1.5 px-3">Search</button>
-                        @if($search !== '' || $roleFilter !== 'all')
-                            <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}" class="text-xs text-slate-500 hover:text-slate-800 font-medium ml-1">Reset</a>
-                        @endif
-                    </form>
+                    {{-- Account Status Filter Pills --}}
+                    <div class="flex items-center gap-1.5 pt-2 border-t border-slate-200/60">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">{{ __('Account Status') }}:</span>
+                        <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => $roleFilter, 'q' => $search]) }}"
+                           class="text-xs font-semibold py-1 px-2.5 rounded-md border transition-all {{ $accountStatus === 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100' }}">
+                            {{ __('All Statuses') }} ({{ $kpis['total_users'] }})
+                        </a>
+                        <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => $roleFilter, 'account_status' => 'active', 'q' => $search]) }}"
+                           class="text-xs font-semibold py-1 px-2.5 rounded-md border transition-all {{ $accountStatus === 'active' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50' }}">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full {{ $accountStatus === 'active' ? 'bg-white' : 'bg-emerald-500' }} mr-1"></span>
+                            {{ __('Active Only') }} ({{ $kpis['active_accounts'] ?? $kpis['total_users'] }})
+                        </a>
+                        <a href="{{ route('admin.dashboard', ['tab' => 'users', 'role' => $roleFilter, 'account_status' => 'blocked', 'q' => $search]) }}"
+                           class="text-xs font-semibold py-1 px-2.5 rounded-md border transition-all {{ $accountStatus === 'blocked' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-rose-800 border-rose-200 hover:bg-rose-50' }}">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full {{ $accountStatus === 'blocked' ? 'bg-white' : 'bg-rose-500' }} mr-1"></span>
+                            {{ __('Blocked Accounts') }} ({{ $kpis['blocked_users'] ?? 0 }})
+                        </a>
+                    </div>
                 </div>
 
                 {{-- Users Table --}}
@@ -337,6 +367,7 @@
                         <thead>
                             <tr class="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                                 <th class="pb-3 pr-4">User Details</th>
+                                <th class="pb-3 pr-4">Account Status</th>
                                 <th class="pb-3 pr-4">Assigned Role &amp; Quick Switch</th>
                                 <th class="pb-3 pr-4">Vendor Profile &amp; Storefront</th>
                                 <th class="pb-3 pr-4">Joined Date</th>
@@ -345,12 +376,12 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($allUsers as $u)
-                                <tr class="hover:bg-slate-50 transition-colors">
+                                <tr class="hover:bg-slate-50 transition-colors {{ $u->is_blocked ? 'bg-rose-50/20' : '' }}">
                                     {{-- User Info --}}
                                     <td class="py-3.5 pr-4">
                                         <div class="flex items-center gap-3">
                                             <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-xs
-                                                {{ $u->isAdmin() ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : ($u->isVendor() ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-600 to-slate-800') }}">
+                                                {{ $u->is_blocked ? 'bg-slate-500 ring-2 ring-rose-400/50' : ($u->isAdmin() ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : ($u->isVendor() ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-600 to-slate-800')) }}">
                                                 {{ strtoupper(substr($u->name, 0, 1)) }}
                                             </div>
                                             <div class="min-w-0">
@@ -370,6 +401,36 @@
                                                 </div>
                                             </div>
                                         </div>
+                                    </td>
+
+                                    {{-- Account Status Badge --}}
+                                    <td class="py-3.5 pr-4 whitespace-nowrap">
+                                        @if($u->is_blocked)
+                                            <div class="space-y-1">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold border border-rose-200 text-[11px]">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                                                    <span>{{ __('Blocked') }}</span>
+                                                </span>
+                                                @if($u->blocked_reason)
+                                                    <p class="text-[10px] text-rose-700 font-medium max-w-[170px] truncate" title="{{ $u->blocked_reason }}">
+                                                        "{{ $u->blocked_reason }}"
+                                                    </p>
+                                                @endif
+                                                <p class="text-[9px] text-slate-400">
+                                                    {{ $u->blocked_at?->format('M j, Y') ?? 'Recently' }}
+                                                    @if($u->blockedBy)
+                                                        &bull; by {{ $u->blockedBy->name }}
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        @else
+                                            <div>
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 text-[11px]">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                    <span>{{ __('Active') }}</span>
+                                                </span>
+                                            </div>
+                                        @endif
                                     </td>
 
                                     {{-- Role & Quick Role Switcher --}}
@@ -452,13 +513,43 @@
                                                         'phone' => $u->vendorProfile?->phone ?? '',
                                                         'is_approved' => (bool) ($u->vendorProfile?->is_approved ?? true),
                                                     ]) }})"
-                                                    class="btn-secondary text-[11px] py-1 px-2.5 inline-flex items-center gap-1 hover:bg-slate-50">
+                                                    class="btn-secondary text-[11px] py-1 px-2.5 inline-flex items-center gap-1 hover:bg-slate-50"
+                                                    title="Edit user details">
                                                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                                 <span>Edit</span>
                                             </button>
 
-                                            {{-- Delete Button --}}
+                                            {{-- Block / Unblock Action Buttons --}}
                                             @if($u->id !== auth()->id())
+                                                @if($u->is_blocked)
+                                                    <form method="POST" action="{{ route('admin.users.unblock', $u) }}" class="inline">
+                                                        @csrf
+                                                        <button type="submit" class="text-[11px] py-1 px-2.5 rounded-lg border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold transition-colors inline-flex items-center gap-1"
+                                                                title="Unblock account and restore access">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                            <span>Unblock</span>
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <button type="button"
+                                                            onclick="openBlockUserModal({{ $u->id }}, '{{ addslashes($u->name) }}', '{{ addslashes($u->email) }}')"
+                                                            class="text-[11px] py-1 px-2.5 rounded-lg border border-rose-200 text-rose-700 bg-rose-50/70 hover:bg-rose-100 font-bold transition-colors inline-flex items-center gap-1"
+                                                            title="Block user and invalidate active sessions">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                                        <span>Block</span>
+                                                    </button>
+                                                @endif
+
+                                                {{-- Administrative Audit History Button --}}
+                                                <button type="button"
+                                                        onclick="openBlockHistoryModal({{ $u->id }}, '{{ addslashes($u->name) }}')"
+                                                        class="text-[11px] py-1 px-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors inline-flex items-center gap-1"
+                                                        title="View administrative blocking & unblocking records">
+                                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    <span class="sr-only">History</span>
+                                                </button>
+
+                                                {{-- Delete Button --}}
                                                 <form method="POST" action="{{ route('admin.users.destroy', $u) }}"
                                                       onsubmit="return confirm('Permanently delete user &quot;{{ addslashes($u->name) }}&quot;? This cannot be undone.');"
                                                       class="inline">
@@ -474,7 +565,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="py-12 text-center text-slate-400">
+                                    <td colspan="7" class="py-12 text-center text-slate-400">
                                         No users found matching your search criteria.
                                     </td>
                                 </tr>
@@ -1244,6 +1335,117 @@
         </div>
     </div>
 
+    {{-- ========================================================================= --}}
+    {{-- MODAL: BLOCK USER ACCOUNT --}}
+    {{-- ========================================================================= --}}
+    <div id="blockUserModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 border border-slate-200 relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">{{ __('Block User Account') }}</h3>
+                        <p class="text-xs text-slate-500">{{ __('Suspend access, terminate active sessions, and record audit trail.') }}</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBlockUserModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                <p class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">{{ __('Target Account') }}</p>
+                <p class="text-sm font-bold text-slate-900 mt-0.5" id="blockModalUserName">—</p>
+                <p class="text-xs text-slate-500" id="blockModalUserEmail">—</p>
+            </div>
+
+            {{-- Policy Clarification Notice --}}
+            <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1.5">
+                <p class="font-bold flex items-center gap-1.5 text-rose-950">
+                    <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span>{{ __('Platform Enforcement Policy') }}</span>
+                </p>
+                <ul class="list-disc list-inside space-y-0.5 text-[11px] text-rose-800">
+                    <li>{{ __('Existing login sessions will be immediately terminated.') }}</li>
+                    <li>{{ __('User will be prevented from booking, purchasing tickets, or creating events.') }}</li>
+                    <li>{{ __('Upcoming event reminders will be muted to prevent spam notifications.') }}</li>
+                    <li>{{ __('Existing paid tickets and past orders remain preserved for financial audit records.') }}</li>
+                </ul>
+            </div>
+
+            <form method="POST" id="blockUserForm" action="" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                        {{ __('Administrative Reason for Blocking *') }}
+                    </label>
+                    <textarea name="reason"
+                              required
+                              rows="3"
+                              class="input-field text-xs"
+                              placeholder="{{ __('e.g. Terms of service violation, abusive behavior, fraudulent chargebacks, spam activity...') }}"></textarea>
+                    <p class="text-[10px] text-slate-400 mt-1">{{ __('This reason will be logged in the administrative audit record and displayed to the user upon login attempt.') }}</p>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeBlockUserModal()" class="btn-secondary text-xs py-2 px-4">{{ __('Cancel') }}</button>
+                    <button type="submit" class="text-xs font-bold py-2 px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                        <span>{{ __('Confirm & Block Account') }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ========================================================================= --}}
+    {{-- MODAL: BLOCK AUDIT HISTORY --}}
+    {{-- ========================================================================= --}}
+    <div id="blockHistoryModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-7 space-y-5 border border-slate-200 relative max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900" id="historyModalHeading">{{ __('Account Status & Audit History') }}</h3>
+                        <p class="text-xs text-slate-500">{{ __('Chronological record of administrative blocking and unblocking actions.') }}</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBlockHistoryModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            {{-- Target user current status card --}}
+            <div id="historyModalStatusCard" class="p-4 rounded-xl border shrink-0 bg-slate-50 border-slate-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ __('Current Account State') }}</span>
+                        <h4 class="text-sm font-bold text-slate-900 mt-0.5" id="historyModalUserName">—</h4>
+                    </div>
+                    <span id="historyModalStatusBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full border">—</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-2 italic" id="historyModalReasonBox"></p>
+            </div>
+
+            {{-- Audit records list container --}}
+            <div class="overflow-y-auto space-y-3 flex-1 pr-1" id="historyRecordsList">
+                <div class="text-center py-8 text-xs text-slate-400">
+                    <svg class="w-6 h-6 animate-spin mx-auto text-slate-400 mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>{{ __('Loading audit records...') }}</span>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end shrink-0">
+                <button type="button" onclick="closeBlockHistoryModal()" class="btn-secondary text-xs py-2 px-4">{{ __('Close') }}</button>
+            </div>
+        </div>
+    </div>
+
     {{-- JavaScript for Admin Management Modals --}}
     <script>
         function openCreateUserModal() {
@@ -1294,6 +1496,91 @@
             }
         }
 
+        function openBlockUserModal(userId, userName, userEmail) {
+            const modal = document.getElementById('blockUserModal');
+            const form = document.getElementById('blockUserForm');
+            form.action = "{{ url('/admin/users') }}/" + userId + "/block";
+
+            document.getElementById('blockModalUserName').textContent = userName;
+            document.getElementById('blockModalUserEmail').textContent = userEmail;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeBlockUserModal() {
+            document.getElementById('blockUserModal').classList.add('hidden');
+        }
+
+        function openBlockHistoryModal(userId, userName) {
+            const modal = document.getElementById('blockHistoryModal');
+            const heading = document.getElementById('historyModalHeading');
+            const nameEl = document.getElementById('historyModalUserName');
+            const statusBadge = document.getElementById('historyModalStatusBadge');
+            const reasonBox = document.getElementById('historyModalReasonBox');
+            const listEl = document.getElementById('historyRecordsList');
+
+            heading.textContent = 'Account Status & Audit History: ' + userName;
+            nameEl.textContent = userName;
+            listEl.innerHTML = '<div class="text-center py-8 text-xs text-slate-400"><svg class="w-6 h-6 animate-spin mx-auto text-slate-400 mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Loading audit records...</span></div>';
+
+            modal.classList.remove('hidden');
+
+            fetch("{{ url('/admin/users') }}/" + userId + "/block-history")
+                .then(r => r.json())
+                .then(data => {
+                    const u = data.user;
+                    if (u.is_blocked) {
+                        statusBadge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full border bg-rose-100 text-rose-800 border-rose-200';
+                        statusBadge.textContent = 'Blocked (Active Suspension)';
+                        reasonBox.textContent = u.blocked_reason ? 'Reason: "' + u.blocked_reason + '" (Since ' + u.blocked_at + ')' : 'No reason recorded.';
+                        reasonBox.classList.remove('hidden');
+                    } else {
+                        statusBadge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-200';
+                        statusBadge.textContent = 'Active (Unrestricted)';
+                        reasonBox.classList.add('hidden');
+                    }
+
+                    if (!data.records || data.records.length === 0) {
+                        listEl.innerHTML = '<div class="text-center py-6 text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">No administrative block or unblock records found for this user.</div>';
+                        return;
+                    }
+
+                    let html = '<div class="space-y-2.5">';
+                    data.records.forEach(r => {
+                        const isBlock = r.action === 'blocked';
+                        const badgeClass = isBlock ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                        const icon = isBlock ? '⊘' : '✓';
+                        const actionLabel = isBlock ? 'Account Blocked' : 'Account Unblocked';
+
+                        html += `
+                            <div class="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all space-y-1.5 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[11px] border ${badgeClass}">
+                                        <span>${icon}</span>
+                                        <span>${actionLabel}</span>
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">${r.created_at} (${r.created_at_diff})</span>
+                                </div>
+                                <p class="text-slate-800 font-medium">"${r.reason || 'No note provided'}"</p>
+                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+                                    <span>Administrator: <strong class="text-slate-700">${r.admin_name}</strong></span>
+                                    <span>IP: ${r.ip_address || '—'}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    listEl.innerHTML = html;
+                })
+                .catch(err => {
+                    listEl.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Failed to load audit records. Please try again.</div>';
+                });
+        }
+
+        function closeBlockHistoryModal() {
+            document.getElementById('blockHistoryModal').classList.add('hidden');
+        }
+
         function openCreateCategoryModal() {
             document.getElementById('createCategoryModal').classList.remove('hidden');
         }
@@ -1323,6 +1610,8 @@
             if (e.key === 'Escape') {
                 closeCreateUserModal();
                 closeEditUserModal();
+                closeBlockUserModal();
+                closeBlockHistoryModal();
                 closeCreateCategoryModal();
                 closeEditCategoryModal();
             }
@@ -1334,6 +1623,14 @@
 
         document.getElementById('editUserModal')?.addEventListener('click', function(e) {
             if (e.target === this) closeEditUserModal();
+        });
+
+        document.getElementById('blockUserModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeBlockUserModal();
+        });
+
+        document.getElementById('blockHistoryModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeBlockHistoryModal();
         });
 
         document.getElementById('createCategoryModal')?.addEventListener('click', function(e) {

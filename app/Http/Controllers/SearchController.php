@@ -61,6 +61,19 @@ class SearchController extends Controller
             $query->where('category_id', $validated['category_id']);
         }
 
+        if (!empty($validated['audience'])) {
+            $audienceList = is_array($validated['audience']) ? $validated['audience'] : [$validated['audience']];
+            $audienceList = array_values(array_filter($audienceList, fn ($a) => in_array($a, Event::AUDIENCE_CATEGORIES, true)));
+
+            if (!empty($audienceList)) {
+                $query->where(function ($w) use ($audienceList) {
+                    foreach ($audienceList as $aud) {
+                        $w->orWhereJsonContains('audience', $aud);
+                    }
+                });
+            }
+        }
+
         if (!empty($validated['event_type'])) {
             $query->where('event_type', $validated['event_type']);
         }
@@ -135,7 +148,20 @@ class SearchController extends Controller
 
         $events = $query->paginate(12)->appends($validated);
         $categories = Category::query()->orderBy('name')->get();
+        $selectedAudiences = (array) ($validated['audience'] ?? []);
 
-        return view('search.index', compact('events', 'resolvedPlace', 'categories'));
+        if ($request->wantsJson()) {
+            return response()->json([
+                'data' => $events->items(),
+                'meta' => [
+                    'current_page' => $events->currentPage(),
+                    'last_page' => $events->lastPage(),
+                    'per_page' => $events->perPage(),
+                    'total' => $events->total(),
+                ],
+            ]);
+        }
+
+        return view('search.index', compact('events', 'resolvedPlace', 'categories', 'selectedAudiences'));
     }
 }

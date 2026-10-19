@@ -22,6 +22,10 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_blocked',
+        'blocked_at',
+        'blocked_reason',
+        'blocked_by_id',
     ];
 
     /**
@@ -44,6 +48,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_blocked' => 'boolean',
+            'blocked_at' => 'datetime',
         ];
     }
 
@@ -77,6 +83,16 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'referred_by_user_id');
     }
 
+    public function eventReviews()
+    {
+        return $this->hasMany(EventReview::class);
+    }
+
+    public function vendorReviews()
+    {
+        return $this->hasMany(VendorReview::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -85,5 +101,51 @@ class User extends Authenticatable
     public function isVendor(): bool
     {
         return $this->role === 'vendor';
+    }
+
+    public function blockRecords()
+    {
+        return $this->hasMany(UserBlockRecord::class)->latest();
+    }
+
+    public function blockedBy()
+    {
+        return $this->belongsTo(User::class, 'blocked_by_id');
+    }
+
+    public function isBlocked(): bool
+    {
+        return (bool) $this->is_blocked;
+    }
+
+    public function isActive(): bool
+    {
+        return ! $this->is_blocked;
+    }
+
+    public function canReceiveNotifications(): bool
+    {
+        return ! $this->is_blocked;
+    }
+
+    public function statusBadge(): array
+    {
+        if ($this->is_blocked) {
+            return [
+                'status' => 'blocked',
+                'label' => __('Blocked'),
+                'badge_class' => 'bg-rose-50 text-rose-800 border-rose-200',
+                'dot_class' => 'bg-rose-600',
+                'icon' => '⊘',
+            ];
+        }
+
+        return [
+            'status' => 'active',
+            'label' => __('Active'),
+            'badge_class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            'dot_class' => 'bg-emerald-600',
+            'icon' => '●',
+        ];
     }
 }

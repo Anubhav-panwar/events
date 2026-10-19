@@ -6,15 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\EventStoreRequest;
 use App\Models\Category;
 use App\Models\Event;
+use App\Models\EventMedia;
 use App\Repositories\VendorRepository;
 use App\Services\EventService;
+use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class VendorEventController extends Controller
 {
-    public function __construct(private EventService $service, private VendorRepository $vendorRepo)
-    {
+    public function __construct(
+        private EventService $service,
+        private VendorRepository $vendorRepo,
+        private GeocodingService $geocodingService
+    ) {
     }
 
     public function create(Request $request)
@@ -61,6 +66,16 @@ class VendorEventController extends Controller
         return redirect()->route('vendor.dashboard')->with('status', 'Event deleted');
     }
 
+    public function destroyMedia(Event $event, EventMedia $media)
+    {
+        Gate::authorize('update', $event);
+        abort_unless((int) $media->event_id === (int) $event->id, 404);
+
+        $this->service->deleteMedia($event, $media);
+
+        return back()->with('status', __('Media file deleted successfully.'));
+    }
+
     public function publish(Event $event)
     {
         Gate::authorize('update', $event);
@@ -82,20 +97,54 @@ class VendorEventController extends Controller
         unset($data['media']);
 
         $data['is_featured'] = (bool) ($data['is_featured'] ?? false);
+        $data['is_date_confirmed'] = isset($data['is_date_confirmed']) ? (bool) $data['is_date_confirmed'] : true;
         $data['base_price'] = isset($data['base_price']) ? (float) $data['base_price'] : null;
 
-        foreach (['tags', 'audience'] as $field) {
-            $value = $data[$field] ?? null;
+        if (isset($data['tags'])) {
+            $value = $data['tags'];
             if (is_string($value)) {
-                $data[$field] = array_values(array_filter(array_map(
+                $data['tags'] = array_values(array_filter(array_map(
                     fn ($part) => trim($part),
                     preg_split('/[,\\n]+/', $value) ?: []
                 )));
             }
         }
 
+        if (isset($data['audience'])) {
+            $aud = $data['audience'];
+            if (is_string($aud)) {
+                $aud = preg_split('/[,\\n]+/', $aud) ?: [];
+            }
+            if (is_array($aud)) {
+                $cleaned = [];
+                foreach ($aud as $item) {
+                    $item = trim((string) $item);
+                    $canonical = Event::normalizeAudienceCategory($item) ?? $item;
+                    if ($canonical !== '') {
+                        $cleaned[] = $canonical;
+                    }
+                }
+                $data['audience'] = array_values(array_unique($cleaned));
+            }
+        }
+
         if (($data['event_type'] ?? 'free') === 'free') {
             $data['base_price'] = 0;
+        }
+
+        if (empty($data['latitude']) || empty($data['longitude'])) {
+            $parts = array_filter([
+                $data['address'] ?? null,
+                $data['city'] ?? null,
+                $data['country'] ?? null,
+            ]);
+            if (!empty($parts)) {
+                $geo = $this->geocodingService->geocode(implode(', ', $parts));
+                if ($geo) {
+                    $data['latitude'] = $geo['lat'];
+                    $data['longitude'] = $geo['lng'];
+                }
+            }
         }
 
         return $data;
