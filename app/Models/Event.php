@@ -62,6 +62,7 @@ class Event extends Model
         'event_type',
         'base_price',
         'is_date_confirmed',
+        'dates_announced_at',
         'slug',
         'og_meta',
     ];
@@ -76,6 +77,7 @@ class Event extends Model
         'audience' => 'array',
         'is_featured' => 'boolean',
         'is_date_confirmed' => 'boolean',
+        'dates_announced_at' => 'datetime',
         'base_price' => 'decimal:2',
         'og_meta' => 'array',
     ];
@@ -174,12 +176,8 @@ class Event extends Model
         return $value ? __($value) : $value;
     }
 
-    public function isCalendarEligible(): bool
+    public function isDateConfirmed(): bool
     {
-        if ($this->status !== 'published') {
-            return false;
-        }
-
         if (array_key_exists('is_date_confirmed', $this->attributes) && !$this->is_date_confirmed) {
             return false;
         }
@@ -189,6 +187,78 @@ class Event extends Model
         }
 
         return true;
+    }
+
+    public function isDatesTba(): bool
+    {
+        return !$this->isDateConfirmed();
+    }
+
+    public function isBookingEligible(): bool
+    {
+        if ($this->status !== 'published') {
+            return false;
+        }
+
+        if (!$this->isDateConfirmed()) {
+            return false;
+        }
+
+        // Must have an explicit admission type configured
+        if (empty($this->event_type)) {
+            return false;
+        }
+
+        // For free events, registration is eligible once dates and timing are confirmed
+        if ($this->event_type === 'free') {
+            return true;
+        }
+
+        // For paid events, must have either positive base_price OR at least one active ticket type with price
+        $hasBasePrice = $this->base_price !== null && (float) $this->base_price > 0;
+        $hasActiveTicket = $this->ticketTypes()->where('is_active', true)->where('price', '>', 0)->exists()
+            || ($this->relationLoaded('ticketTypes') && $this->ticketTypes->where('is_active', true)->where('price', '>', 0)->isNotEmpty());
+
+        return $hasBasePrice || $hasActiveTicket;
+    }
+
+    public function getPublicationStatusLabelAttribute(): string
+    {
+        if ($this->status === 'draft') {
+            return __('Draft');
+        }
+
+        if ($this->isDatesTba()) {
+            return __('Published – Dates To Be Announced');
+        }
+
+        if ($this->isBookingEligible()) {
+            return __('Booking Open');
+        }
+
+        return __('Published – Details Confirmed');
+    }
+
+    public function getBookingStatusLabelAttribute(): string
+    {
+        if (!$this->isDateConfirmed()) {
+            return __('Booking: Not Available');
+        }
+
+        if (!$this->isBookingEligible()) {
+            return __('Booking: Incomplete Details');
+        }
+
+        return __('Booking: Open');
+    }
+
+    public function isCalendarEligible(): bool
+    {
+        if ($this->status !== 'published') {
+            return false;
+        }
+
+        return $this->isDateConfirmed();
     }
 
     public function googleCalendarUrl(): ?string

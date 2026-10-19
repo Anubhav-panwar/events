@@ -13,11 +13,14 @@ class HomeController extends Controller
         $categories = Category::orderBy('name')->get();
         $upcomingQuery = Event::query()
             ->where('status', 'published')
-            ->whereDate('event_date', '>=', now()->toDateString())
-            ->with(['media', 'vendorProfile', 'ticketTypes'])
-            ->orderBy('event_date')
-            ->limit(9)
-            ;
+            ->where(function ($q) {
+                $q->whereNull('event_date')
+                  ->orWhere('is_date_confirmed', false)
+                  ->orWhereDate('event_date', '>=', now()->toDateString());
+            })
+            ->with(['media', 'vendorProfile', 'ticketTypes', 'category'])
+            ->orderByRaw('CASE WHEN event_date IS NULL OR is_date_confirmed = 0 THEN 1 ELSE 0 END, event_date ASC')
+            ->limit(9);
 
         $featuredQuery = Event::query()
             ->where('status', 'published')

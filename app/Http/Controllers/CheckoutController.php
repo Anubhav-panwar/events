@@ -26,6 +26,12 @@ class CheckoutController extends Controller
         abort_unless($event, 404);
         $this->authorize('view', $event);
 
+        if (!$event->isBookingEligible()) {
+            throw ValidationException::withMessages([
+                'buy' => __('Ticket booking is not available for this event yet.'),
+            ]);
+        }
+
         $hasTicketTypes = $event->ticketTypes->count() > 0;
 
         $rules = [

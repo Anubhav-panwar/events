@@ -667,21 +667,45 @@
                                         <div class="text-[10px] text-slate-400 truncate max-w-[130px]">{{ $event->venue_name }}</div>
                                     </td>
                                     <td class="py-3.5 pr-4 whitespace-nowrap text-slate-600">
-                                        <div class="font-medium">{{ $event->event_date?->format('M j, Y') }}</div>
-                                        <div class="text-[10px] text-slate-400">{{ $event->start_time }}</div>
+                                        @if($event->isDatesTba())
+                                            <span class="inline-flex px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold">Date: TBA</span>
+                                        @else
+                                            <div class="font-medium">{{ $event->event_date?->format('M j, Y') }}</div>
+                                            <div class="text-[10px] text-slate-400">{{ $event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('H:i') : $event->start_time }}</div>
+                                        @endif
                                     </td>
                                     <td class="py-3.5 pr-4 font-bold text-slate-900 whitespace-nowrap">
-                                        {{ $event->event_type === 'free' ? 'FREE' : '$' . number_format($event->base_price, 2) }}
+                                        @if($event->event_type === 'free')
+                                            FREE
+                                        @elseif($event->base_price !== null && (float)$event->base_price > 0)
+                                            ${{ number_format((float)$event->base_price, 2) }}
+                                        @else
+                                            <span class="text-slate-400 font-normal">TBA</span>
+                                        @endif
                                     </td>
                                     <td class="py-3.5 pr-4 whitespace-nowrap">
-                                        @if($event->status === 'published')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 text-[11px]">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live
+                                        @if($event->status === 'draft')
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold border border-slate-200 text-[11px]">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Draft
                                             </span>
+                                        @elseif($event->isDatesTba())
+                                            <div>
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold border border-amber-200 text-[11px]">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Dates TBA
+                                                </span>
+                                                <div class="text-[10px] text-slate-500 mt-0.5">
+                                                    {{ $event->reminders()->active()->count() }} subscribers
+                                                </div>
+                                            </div>
                                         @else
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold border border-amber-200 text-[11px]">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Draft
-                                            </span>
+                                            <div>
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 text-[11px]">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live
+                                                </span>
+                                                @if($event->isBookingEligible())
+                                                    <div class="text-[10px] text-emerald-700 mt-0.5 font-semibold">Booking Open</div>
+                                                @endif
+                                            </div>
                                         @endif
                                     </td>
                                     <td class="py-3.5 text-right whitespace-nowrap">

@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/events/{event}/media/{media}', [VendorEventController::class, 'destroyMedia'])->name('events.media.destroy');
         Route::patch('/events/{event}/publish', [VendorEventController::class, 'publish'])->name('events.publish');
         Route::patch('/events/{event}/unpublish', [VendorEventController::class, 'unpublish'])->name('events.unpublish');
+        Route::post('/events/{event}/reminders/retry', [VendorEventController::class, 'retryReminders'])->name('events.reminders.retry');
         Route::get('/events/{event}/tickets/create', [VendorTicketController::class, 'create'])->name('tickets.create');
         Route::post('/events/{event}/tickets', [VendorTicketController::class, 'store'])->name('tickets.store');
         Route::post('/events/{event}/tickets/generate-defaults', [VendorTicketController::class, 'generateDefaults'])->name('tickets.generate_defaults');
@@ -66,6 +67,7 @@ Route::get('/v/{slug}/share/{channel}', [ShareController::class, 'vendorRedirect
 Route::get('/e/{slug}', [EventController::class, 'show'])->name('events.show');
 Route::get('/e/{slug}/recommendations', [EventController::class, 'recommendations'])->name('events.recommendations');
 Route::get('/e/{slug}/ics', [\App\Http\Controllers\EventCalendarController::class, 'ics'])->name('events.ics');
+Route::get('/e/{slug}/calendar.ics', [\App\Http\Controllers\EventCalendarController::class, 'ics'])->name('events.calendar.ics');
 Route::get('/e/{slug}/share/{channel}', [ShareController::class, 'redirect'])->name('events.share');
 Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('search');
 Route::get('/events', [\App\Http\Controllers\SearchController::class, 'index'])->name('events.index');
@@ -129,6 +131,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::post('/e/{slug}/buy', [CheckoutController::class, 'createSession'])->name('orders.buy');
+    Route::post('/e/{slug}/checkout', [CheckoutController::class, 'createSession'])->name('checkout.session');
     Route::get('/checkout/{order}/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::get('/checkout/{order}/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 

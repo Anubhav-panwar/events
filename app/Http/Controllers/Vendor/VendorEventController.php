@@ -79,9 +79,15 @@ class VendorEventController extends Controller
     public function publish(Event $event)
     {
         Gate::authorize('update', $event);
+        $wasAnnounced = !empty($event->dates_announced_at);
         $event->update(['status' => 'published']);
+        $event->refresh();
 
-        return back()->with('status', 'Event published');
+        if (!$wasAnnounced && $event->isDateConfirmed()) {
+            app(\App\Services\EventNotificationService::class)->notifySubscribersOfAnnouncedDates($event);
+        }
+
+        return back()->with('status', __('Event published'));
     }
 
     public function unpublish(Event $event)
@@ -89,7 +95,15 @@ class VendorEventController extends Controller
         Gate::authorize('update', $event);
         $event->update(['status' => 'draft']);
 
-        return back()->with('status', 'Event moved to draft');
+        return back()->with('status', __('Event moved to draft'));
+    }
+
+    public function retryReminders(Event $event)
+    {
+        Gate::authorize('update', $event);
+        $count = app(\App\Services\EventNotificationService::class)->retryFailedNotifications($event);
+
+        return back()->with('status', __(':count reminder notification(s) sent successfully.', ['count' => $count]));
     }
 
     private function normalizePayload(array $data): array
@@ -97,8 +111,15 @@ class VendorEventController extends Controller
         unset($data['media']);
 
         $data['is_featured'] = (bool) ($data['is_featured'] ?? false);
-        $data['is_date_confirmed'] = isset($data['is_date_confirmed']) ? (bool) $data['is_date_confirmed'] : true;
-        $data['base_price'] = isset($data['base_price']) ? (float) $data['base_price'] : null;
+        $hasDate = !empty($data['event_date']) && !empty($data['start_time']);
+        $confirmedInput = isset($data['is_date_confirmed']) ? (bool) $data['is_date_confirmed'] : false;
+        $data['is_date_confirmed'] = $hasDate && $confirmedInput;
+
+        $data['event_date'] = !empty($data['event_date']) ? $data['event_date'] : null;
+        $data['start_time'] = !empty($data['start_time']) ? $data['start_time'] : null;
+        $data['end_time'] = !empty($data['end_time']) ? $data['end_time'] : null;
+        $data['event_type'] = $data['event_type'] ?? 'free';
+        $data['base_price'] = isset($data['base_price']) && $data['base_price'] !== '' ? (float) $data['base_price'] : null;
 
         if (isset($data['tags'])) {
             $value = $data['tags'];

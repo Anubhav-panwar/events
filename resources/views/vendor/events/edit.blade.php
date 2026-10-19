@@ -14,15 +14,29 @@
         {{-- Header Bar --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
             <div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-2xl font-bold tracking-tight text-slate-950">{{ __('Edit Event') }}</h1>
-                    @if($event->status === 'published')
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {{ __('Published') }}
+                    @if($event->status === 'draft')
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> {{ __('Draft') }}
+                        </span>
+                    @elseif($event->isDatesTba())
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> {{ __('Published – Dates TBA') }}
                         </span>
                     @else
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {{ __('Draft') }}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {{ __('Published – Confirmed') }}
+                        </span>
+                    @endif
+
+                    @if($event->isBookingEligible())
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200">
+                            {{ __('Booking Open') }}
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200">
+                            {{ __('Booking Disabled') }}
                         </span>
                     @endif
                 </div>
@@ -39,6 +53,51 @@
                 </a>
             </div>
         </div>
+
+        @if($event->isDatesTba())
+            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
+                <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="flex-1">
+                    <p class="font-bold text-sm text-amber-950">{{ __('Upcoming Event (Dates To Be Announced)') }}</p>
+                    <p class="mt-0.5 leading-relaxed">{{ __('This event is listed as TBA. Ticket booking and calendar exports are disabled. Customers can subscribe to "Notify Me" reminders.') }}</p>
+                    @php
+                        $activeRemindersCount = $event->reminders()->active()->count();
+                    @endphp
+                    <p class="mt-1 font-semibold text-amber-800">
+                        {{ trans_choice('{0} No users have subscribed to reminders yet.|{1} 1 user is waiting for date announcement.|[2,*] :count users are waiting for date announcement.', $activeRemindersCount, ['count' => $activeRemindersCount]) }}
+                    </p>
+                    <p class="mt-0.5 text-slate-500">
+                        {{ __('When you enter confirmed dates/times and save with "Confirmed Event Schedule" checked, an announcement email will automatically be dispatched to all subscribers.') }}
+                    </p>
+                </div>
+            </div>
+        @elseif($event->dates_announced_at)
+            <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-3">
+                <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="flex-1">
+                    <p class="font-bold text-sm text-emerald-950">{{ __('Date Announcement Email Sent') }}</p>
+                    <p class="mt-0.5 leading-relaxed">
+                        {{ __('Confirmed date announcement email was dispatched to subscribers on :date.', ['date' => $event->dates_announced_at->format('M d, Y H:i')]) }}
+                    </p>
+                    @php
+                        $notifiedCount = $event->reminders()->where('notification_status', \App\Models\EventReminder::STATUS_NOTIFIED)->count();
+                        $failedCount = $event->reminders()->where('notification_status', \App\Models\EventReminder::STATUS_FAILED)->count();
+                    @endphp
+                    <div class="mt-2 flex items-center gap-3">
+                        <span class="font-semibold text-emerald-800">{{ $notifiedCount }} {{ __('subscribers successfully notified') }}</span>
+                        @if($failedCount > 0)
+                            <span class="font-bold text-red-600">{{ $failedCount }} {{ __('failed deliveries') }}</span>
+                            <form method="POST" action="{{ route('vendor.events.reminders.retry', $event) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="text-xs font-bold text-red-700 underline hover:text-red-900 ml-2">
+                                    {{ __('Retry Failed Deliveries') }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <form method="POST" action="{{ route('vendor.events.update', $event) }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
@@ -79,21 +138,25 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Event Admission') }} <span class="text-red-500">*</span></label>
-                        <select name="event_type" class="input-field" id="eventTypeField" required>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Event Admission') }}</label>
+                        <select name="event_type" class="input-field" id="eventTypeField">
+                            <option value="">{{ __('To Be Announced (Pricing TBA)') }}</option>
                             <option value="free" @selected(old('event_type', $event->event_type) === 'free')>{{ __('Free') }}</option>
                             <option value="paid" @selected(old('event_type', $event->event_type) === 'paid')>{{ __('Paid') }}</option>
                         </select>
+                        @error('event_type')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Base Ticket Price ($)') }}</label>
-                        <input type="number" step="0.01" min="0" name="base_price" id="basePriceField" value="{{ old('base_price', $event->base_price) }}" class="input-field">
+                        <input type="number" step="0.01" min="0" name="base_price" id="basePriceField" value="{{ old('base_price', $event->base_price) }}" class="input-field" placeholder="0.00 (TBA if left empty)">
+                        @error('base_price')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Capacity') }}</label>
                         <input type="number" min="0" name="capacity" value="{{ old('capacity', $event->capacity) }}" class="input-field">
+                        @error('capacity')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="flex items-center pt-6">
@@ -107,39 +170,45 @@
 
             {{-- Card 2: Schedule & Timing --}}
             <div class="surface p-6 space-y-4">
-                <div class="border-b border-slate-100 pb-3">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        {{ __('2. Schedule & Timing') }}
-                    </h2>
+                <div class="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            {{ __('2. Schedule & Timing') }}
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ __('Leave empty if event date is To Be Announced (TBA).') }}</p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Event Date') }} <span class="text-red-500">*</span></label>
-                        <input type="date" name="event_date" value="{{ old('event_date', $event->event_date?->format('Y-m-d')) }}" class="input-field" required>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Event Date') }} <span class="text-xs font-normal text-slate-400">({{ __('Optional / TBA') }})</span></label>
+                        <input type="date" name="event_date" value="{{ old('event_date', $event->event_date?->format('Y-m-d')) }}" class="input-field">
+                        @error('event_date')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Start Time') }} <span class="text-red-500">*</span></label>
-                        <input type="time" name="start_time" value="{{ old('start_time', $event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('H:i') : $event->start_time) }}" class="input-field" required>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Start Time') }} <span class="text-xs font-normal text-slate-400">({{ __('Optional') }})</span></label>
+                        <input type="time" name="start_time" value="{{ old('start_time', $event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('H:i') : $event->start_time) }}" class="input-field">
+                        @error('start_time')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('End Time') }}</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('End Time') }} <span class="text-xs font-normal text-slate-400">({{ __('Optional') }})</span></label>
                         <input type="time" name="end_time" value="{{ old('end_time', $event->end_time instanceof \Carbon\Carbon ? $event->end_time->format('H:i') : $event->end_time) }}" class="input-field">
+                        @error('end_time')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
 
                 <div class="mt-4 pt-3 border-t border-slate-100 flex items-start gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60">
                     <input type="hidden" name="is_date_confirmed" value="0">
-                    <input type="checkbox" id="is_date_confirmed" name="is_date_confirmed" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" @checked(old('is_date_confirmed', $event->is_date_confirmed ?? true))>
+                    <input type="checkbox" id="is_date_confirmed" name="is_date_confirmed" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" @checked(old('is_date_confirmed', $event->is_date_confirmed))>
                     <div>
                         <label for="is_date_confirmed" class="text-xs font-bold text-slate-800 cursor-pointer block">
-                            {{ __('Confirmed Event Schedule') }}
+                            {{ __('Confirmed Event Schedule & Ready for Booking') }}
                         </label>
                         <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                            {{ __('Keep checked if this date and time are confirmed. If unchecked, the event date will be marked as tentative and calendar integration (Google Calendar & .ICS downloads) will remain unavailable until confirmed.') }}
+                            {{ __('Check this when the event date, start time, and booking configuration are confirmed. Saving with confirmed dates will trigger automatic email announcements to all users waiting for dates.') }}
                         </p>
                     </div>
                 </div>

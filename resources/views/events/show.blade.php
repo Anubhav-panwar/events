@@ -19,11 +19,13 @@
 
     @php
         $isCalendarEligible = $event->isCalendarEligible();
-        $eventDate = \Carbon\Carbon::parse($event->event_date);
-        $startTimeStr = $event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('H:i') : (string)$event->start_time;
+        $isDateConfirmed = $event->isDateConfirmed();
+        $isBookingEligible = $event->isBookingEligible();
+        $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+        $startTimeStr = $event->start_time ? ($event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('H:i') : (string)$event->start_time) : null;
         $endTimeStr = $event->end_time ? ($event->end_time instanceof \Carbon\Carbon ? $event->end_time->format('H:i') : (string)$event->end_time) : null;
-        $startCarbon = (clone $eventDate)->setTimeFromTimeString($startTimeStr);
-        $endCarbon = $endTimeStr ? (clone $eventDate)->setTimeFromTimeString($endTimeStr) : (clone $startCarbon)->addHours(2);
+        $startCarbon = ($eventDate && $startTimeStr) ? (clone $eventDate)->setTimeFromTimeString($startTimeStr) : null;
+        $endCarbon = ($startCarbon && $endTimeStr) ? (clone $eventDate)->setTimeFromTimeString($endTimeStr) : ($startCarbon ? (clone $startCarbon)->addHours(2) : null);
 
         $googleUrl = $isCalendarEligible ? $event->googleCalendarUrl() : null;
         $outlookUrl = $isCalendarEligible ? $event->outlookCalendarUrl() : null;
@@ -117,14 +119,14 @@
             <div class="relative app-content h-full flex flex-col justify-end pb-8 z-10">
                 <div class="max-w-3xl">
                     <div class="flex flex-wrap gap-2 mb-3">
-                        <span class="badge bg-slate-900/80 text-emerald-300 border-emerald-500/30">{{ strtoupper($event->event_type === 'free' ? __('FREE') : ($event->event_type === 'paid' ? __('PAID') : __($event->event_type))) }}</span>
+                        <span class="badge bg-slate-900/80 text-emerald-300 border-emerald-500/30">{{ strtoupper($event->event_type === 'free' ? __('FREE') : ($event->event_type === 'paid' ? __('PAID') : __('TBA'))) }}</span>
                         @if($event->is_featured)
                             <span class="px-3 py-1 rounded-full bg-amber-400 text-amber-950 text-xs font-bold shadow">{{ __('Featured') }}</span>
                         @endif
-                        @if(!$event->is_date_confirmed)
+                        @if(!$isDateConfirmed)
                             <span class="px-3 py-1 rounded-full bg-amber-500/90 text-white text-xs font-bold shadow flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                {{ __('Schedule Tentative') }}
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                {{ __('Dates To Be Announced') }}
                             </span>
                         @endif
                         @if(isset($reviewsCount) && $reviewsCount > 0)
@@ -142,12 +144,19 @@
                     <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-slate-200 text-sm font-medium">
                         <span class="flex items-center gap-1.5">
                             <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            {{ $event->event_date?->translatedFormat('l, M j, Y') ?? $event->event_date?->format('l, M j, Y') }}
+                            {{ $isDateConfirmed ? ($event->event_date?->translatedFormat('l, M j, Y') ?? $event->event_date?->format('l, M j, Y')) : __('Date: To Be Announced') }}
                         </span>
-                        <span class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            {{ $startTimeStr }}{{ $endTimeStr ? ' – '.$endTimeStr : '' }}
-                        </span>
+                        @if($isDateConfirmed && $startTimeStr)
+                            <span class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                {{ $startTimeStr }}{{ $endTimeStr ? ' – '.$endTimeStr : '' }}
+                            </span>
+                        @else
+                            <span class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                {{ __('Time: To Be Announced') }}
+                            </span>
+                        @endif
                         @if($event->venue_name || $event->city)
                             <span class="flex items-center gap-1.5">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
@@ -196,8 +205,13 @@
                                 </div>
                                 <div>
                                     <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">{{ __('Day & Time') }}</p>
-                                    <p class="text-sm font-bold text-slate-900 mt-0.5">{{ $event->event_date?->translatedFormat('l, M j, Y') ?? $event->event_date?->format('l, M j, Y') }}</p>
-                                    <p class="text-sm text-slate-600">{{ $startTimeStr }}{{ $endTimeStr ? ' – '.$endTimeStr : '' }}</p>
+                                    @if($isDateConfirmed)
+                                        <p class="text-sm font-bold text-slate-900 mt-0.5">{{ $event->event_date?->translatedFormat('l, M j, Y') ?? $event->event_date?->format('l, M j, Y') }}</p>
+                                        <p class="text-sm text-slate-600">{{ $startTimeStr }}{{ $endTimeStr ? ' – '.$endTimeStr : '' }}</p>
+                                    @else
+                                        <p class="text-sm font-bold text-slate-900 mt-0.5">{{ __('Date: To Be Announced') }}</p>
+                                        <p class="text-sm text-slate-500">{{ __('Time: To Be Announced') }}</p>
+                                    @endif
                                 </div>
                             </div>
                             <div class="flex items-start gap-3 p-3 bg-slate-50 rounded border border-slate-200 shadow-sm">
@@ -462,23 +476,47 @@
                                     </form>
                                 @endif
 
-                                <form method="POST" action="{{ $hasReminderStoreRoute ? route('events.reminders.store', $event->slug) : url('/events/'.$event->slug.'/reminders') }}" class="flex gap-2">
-                                    @csrf
-                                    <select name="minutes_before" class="input-field py-2 text-sm">
-                                        <option value="60" @selected(($reminder?->minutes_before ?? null) == 60)>{{ __('1 hr before') }}</option>
-                                        <option value="180" @selected(($reminder?->minutes_before ?? null) == 180)>{{ __('3 hrs before') }}</option>
-                                        <option value="1440" @selected(($reminder?->minutes_before ?? 1440) == 1440)>{{ __('1 day before') }}</option>
-                                        <option value="2880" @selected(($reminder?->minutes_before ?? null) == 2880)>{{ __('2 days before') }}</option>
-                                    </select>
-                                    <button class="btn-secondary text-sm whitespace-nowrap">{{ __('Set Reminder') }}</button>
-                                </form>
-
-                                @if($reminder)
-                                    <form method="POST" action="{{ $hasReminderDestroyRoute ? route('events.reminders.destroy', $event->slug) : url('/events/'.$event->slug.'/reminders') }}">
+                                @if(!$isDateConfirmed)
+                                    @if($reminder)
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                {{ __('Reminder Enabled') }}
+                                            </span>
+                                            <form method="POST" action="{{ $hasReminderDestroyRoute ? route('events.reminders.destroy', $event->slug) : url('/events/'.$event->slug.'/reminders') }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="text-xs font-bold text-slate-500 hover:text-red-600 transition-colors ml-1">{{ __('Cancel Reminder') }}</button>
+                                            </form>
+                                        </div>
+                                    @else
+                                        <form method="POST" action="{{ $hasReminderStoreRoute ? route('events.reminders.store', $event->slug) : url('/events/'.$event->slug.'/reminders') }}">
+                                            @csrf
+                                            <button class="btn-primary text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-sm">
+                                                <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                                {{ __('Notify Me When Announced') }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                @else
+                                    <form method="POST" action="{{ $hasReminderStoreRoute ? route('events.reminders.store', $event->slug) : url('/events/'.$event->slug.'/reminders') }}" class="flex gap-2">
                                         @csrf
-                                        @method('DELETE')
-                                        <button class="text-sm font-bold text-slate-500 hover:text-red-700 transition-colors">{{ __('Remove Reminder') }}</button>
+                                        <select name="minutes_before" class="input-field py-2 text-sm">
+                                            <option value="60" @selected(($reminder?->minutes_before ?? null) == 60)>{{ __('1 hr before') }}</option>
+                                            <option value="180" @selected(($reminder?->minutes_before ?? null) == 180)>{{ __('3 hrs before') }}</option>
+                                            <option value="1440" @selected(($reminder?->minutes_before ?? 1440) == 1440)>{{ __('1 day before') }}</option>
+                                            <option value="2880" @selected(($reminder?->minutes_before ?? null) == 2880)>{{ __('2 days before') }}</option>
+                                        </select>
+                                        <button class="btn-secondary text-sm whitespace-nowrap">{{ __('Set Reminder') }}</button>
                                     </form>
+
+                                    @if($reminder)
+                                        <form method="POST" action="{{ $hasReminderDestroyRoute ? route('events.reminders.destroy', $event->slug) : url('/events/'.$event->slug.'/reminders') }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="text-sm font-bold text-slate-500 hover:text-red-700 transition-colors">{{ __('Remove Reminder') }}</button>
+                                        </form>
+                                    @endif
                                 @endif
                             </div>
                         @endauth
@@ -758,174 +796,261 @@
                             {{ __('Tickets') }}
                         </h3>
 
-                        {{-- Availability badge --}}
-                        @if($event->ticketTypes->count())
-                            <div class="mb-4">
-                                @if($remainingTotal <= 0)
-                                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-sm font-bold border border-red-200 rounded">
-                                        {{ __('Event Full') }}
-                                    </div>
-                                @elseif($remainingTotal <= 10)
-                                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-900 text-sm font-bold border border-amber-200 rounded">
-                                        {{ __('Only :count seats left!', ['count' => $remainingTotal]) }}
-                                    </div>
-                                @else
-                                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 text-sm font-bold border border-emerald-200 rounded">
-                                        {{ __(':count seats available', ['count' => $remainingTotal]) }}
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
+                        @if(!$isBookingEligible)
+                            {{-- Booking Not Yet Available State --}}
+                            <div class="space-y-4">
+                                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-bold flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <span>{{ __('Booking: Not Yet Available') }}</span>
+                                </div>
 
-                        {{-- Available Ticket Categories & Pricing Tier Selection --}}
-                        @if($event->ticketTypes->count())
-                            <div class="mb-4 space-y-2.5">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                    {{ __('Available Ticket Categories') }}
-                                </label>
-                                <div class="space-y-2">
-                                    @foreach($event->ticketTypes as $t)
-                                        @php
-                                            $meta = $t->tierMeta();
-                                            $available = $t->isAvailable();
-                                            $rem = $t->remainingQuantity();
-                                        @endphp
-                                        <div class="p-3.5 rounded-2xl border transition-all {{ $available ? 'border-slate-200 bg-white hover:border-slate-300 shadow-xs' : 'border-slate-100 bg-slate-50/70 opacity-70' }}">
-                                            <div class="flex items-start justify-between gap-3">
-                                                <div class="flex items-start gap-2.5 min-w-0">
-                                                    <span class="text-base shrink-0 mt-0.5">{{ $meta['icon'] }}</span>
-                                                    <div class="min-w-0">
-                                                        <div class="flex flex-wrap items-center gap-1.5">
-                                                            <p class="text-xs font-bold text-slate-900 truncate">{{ __($t->name) }}</p>
-                                                            <span class="px-2 py-0.2 rounded-full text-[10px] font-bold border {{ $meta['bg_badge'] }}">
-                                                                {{ $meta['label'] }}
-                                                            </span>
-                                                        </div>
-                                                        @if($t->description)
-                                                            <p class="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{{ __($t->description) }}</p>
-                                                        @endif
-                                                        <p class="text-[10px] mt-1 {{ $rem > 0 ? 'text-slate-400' : 'text-rose-600 font-bold' }}">
-                                                            @if($rem > 0)
-                                                                {{ $rem }} {{ __('tickets remaining') }}
-                                                            @else
-                                                                {{ __('Sold Out') }}
-                                                            @endif
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div class="text-right shrink-0">
-                                                    <span class="text-sm font-extrabold {{ (float)$t->price <= 0 ? 'text-emerald-700' : 'text-slate-950' }}">
-                                                        {{ (float)$t->price <= 0 ? __('FREE') : '$'.number_format((float)$t->price, 2).' '.($t->currency ?: 'USD') }}
+                                <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2 text-xs">
+                                    <div class="flex justify-between items-center text-slate-600">
+                                        @if(!$isDateConfirmed)
+                                            <span class="font-bold text-slate-900">{{ __('Date: To Be Announced') }}</span>
+                                        @else
+                                            <span class="font-medium">{{ __('Date:') }}</span>
+                                            <span class="font-bold text-slate-900">{{ $event->event_date?->translatedFormat('M j, Y') ?? $event->event_date?->format('M j, Y') }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex justify-between items-center text-slate-600">
+                                        @if(empty($event->event_type) || ($event->event_type === 'paid' && (float)($event->base_price ?? 0) <= 0 && $event->ticketTypes->isEmpty()))
+                                            <span class="font-bold text-slate-900">{{ __('Ticket Price: To Be Announced') }}</span>
+                                        @else
+                                            <span class="font-medium">{{ __('Ticket Price:') }}</span>
+                                            <span class="font-bold text-slate-900">
+                                                {{ $event->event_type === 'free' ? __('Free') : '$'.number_format((float) $event->base_price, 2) }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                {{-- Prominent Notify Me Card --}}
+                                <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
+                                    <div class="flex items-start gap-2.5">
+                                        <span class="text-xl">🔔</span>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-900">{{ __('Notify Me When Announced') }}</h4>
+                                            <p class="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                                                {{ __('We will email you automatically when confirmed dates and tickets are announced by the organizer.') }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    @auth
+                                        @if($reminder && $reminder->status === 'active')
+                                            <div class="p-3 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs space-y-2">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="font-bold flex items-center gap-1.5 text-emerald-800">
+                                                        <svg class="w-4 h-4 text-emerald-700" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                                        {{ __('Reminder Enabled') }}
+                                                    </span>
+                                                    <span class="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-bold">
+                                                        {{ __('Notifications On') }}
                                                     </span>
                                                 </div>
+                                                <p class="text-[11px] text-emerald-800">
+                                                    {{ __('We will email :email as soon as details are finalized.', ['email' => auth()->user()->email]) }}
+                                                </p>
+                                                <form method="POST" action="{{ route('events.reminders.destroy', $event->slug) }}" class="pt-1 border-t border-emerald-200">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-xs font-semibold text-rose-700 hover:text-rose-900 hover:underline">
+                                                        &times; {{ __('Cancel Reminder') }}
+                                                    </button>
+                                                </form>
                                             </div>
+                                        @else
+                                            <form method="POST" action="{{ route('events.reminders.store', $event->slug) }}">
+                                                @csrf
+                                                <input type="hidden" name="channel" value="email">
+                                                <button type="submit" class="btn-emerald w-full py-2.5 shadow font-bold flex items-center justify-center gap-2 rounded-xl text-xs">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                                    <span>{{ __('Notify Me') }}</span>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('login') }}" class="btn-primary w-full text-center block py-2.5 rounded-xl font-bold text-xs">
+                                            <span class="flex items-center justify-center gap-1.5">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                                <span>{{ __('Sign In to Set "Notify Me"') }}</span>
+                                            </span>
+                                        </a>
+                                    @endauth
+                                </div>
+                            </div>
+                        @else
+                            {{-- Booking Open State --}}
+                            {{-- Availability badge --}}
+                            @if($event->ticketTypes->count())
+                                <div class="mb-4">
+                                    @if($remainingTotal <= 0)
+                                        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-sm font-bold border border-red-200 rounded">
+                                            {{ __('Event Full') }}
                                         </div>
-                                    @endforeach
+                                    @elseif($remainingTotal <= 10)
+                                        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-900 text-sm font-bold border border-amber-200 rounded">
+                                            {{ __('Only :count seats left!', ['count' => $remainingTotal]) }}
+                                        </div>
+                                    @else
+                                        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 text-sm font-bold border border-emerald-200 rounded">
+                                            {{ __(':count seats available', ['count' => $remainingTotal]) }}
+                                        </div>
+                                    @endif
                                 </div>
-                            </div>
-                        @elseif($event->event_type === 'free')
-                            <div class="mb-4 p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50 text-sm text-emerald-800 font-bold text-center flex items-center justify-center gap-2">
-                                <span>🎟️</span>
-                                <span>{{ __('Free General Admission') }}</span>
-                            </div>
-                        @endif
+                            @endif
 
-                        @auth
-                            <form method="POST" action="{{ $hasOrdersBuyRoute ? route('orders.buy', $event->slug) : url('/e/'.$event->slug.'/buy') }}"
-                                  class="space-y-4"
-                                  x-data="{
-                                      selectedTypeId: '{{ $event->ticketTypes->firstWhere('is_active', true)?->id ?? $event->ticketTypes->first()?->id }}',
-                                      quantity: 1,
-                                      prices: {
-                                          @foreach($event->ticketTypes as $t)
-                                              '{{ $t->id }}': {{ (float)$t->price }},
-                                          @endforeach
-                                      },
-                                      currencies: {
-                                          @foreach($event->ticketTypes as $t)
-                                              '{{ $t->id }}': '{{ $t->currency ?: 'USD' }}',
-                                          @endforeach
-                                      },
-                                      getUnit() {
-                                          return this.prices[this.selectedTypeId] ?? 0;
-                                      },
-                                      getTotal() {
-                                          return (this.getUnit() * this.quantity).toFixed(2);
-                                      },
-                                      getCurr() {
-                                          return this.currencies[this.selectedTypeId] || 'USD';
-                                      }
-                                  }">
-                                @csrf
+                            {{-- Available Ticket Categories & Pricing Tier Selection --}}
+                            @if($event->ticketTypes->count())
+                                <div class="mb-4 space-y-2.5">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        {{ __('Available Ticket Categories') }}
+                                    </label>
+                                    <div class="space-y-2">
+                                        @foreach($event->ticketTypes as $t)
+                                            @php
+                                                $meta = $t->tierMeta();
+                                                $available = $t->isAvailable();
+                                                $rem = $t->remainingQuantity();
+                                            @endphp
+                                            <div class="p-3.5 rounded-2xl border transition-all {{ $available ? 'border-slate-200 bg-white hover:border-slate-300 shadow-xs' : 'border-slate-100 bg-slate-50/70 opacity-70' }}">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div class="flex items-start gap-2.5 min-w-0">
+                                                        <span class="text-base shrink-0 mt-0.5">{{ $meta['icon'] }}</span>
+                                                        <div class="min-w-0">
+                                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                                <p class="text-xs font-bold text-slate-900 truncate">{{ __($t->name) }}</p>
+                                                                <span class="px-2 py-0.2 rounded-full text-[10px] font-bold border {{ $meta['bg_badge'] }}">
+                                                                    {{ $meta['label'] }}
+                                                                </span>
+                                                            </div>
+                                                            @if($t->description)
+                                                                <p class="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{{ __($t->description) }}</p>
+                                                            @endif
+                                                            <p class="text-[10px] mt-1 {{ $rem > 0 ? 'text-slate-400' : 'text-rose-600 font-bold' }}">
+                                                                @if($rem > 0)
+                                                                    {{ $rem }} {{ __('tickets remaining') }}
+                                                                @else
+                                                                    {{ __('Sold Out') }}
+                                                                @endif
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right shrink-0">
+                                                        <span class="text-sm font-extrabold {{ (float)$t->price <= 0 ? 'text-emerald-700' : 'text-slate-950' }}">
+                                                            {{ (float)$t->price <= 0 ? __('FREE') : '$'.number_format((float)$t->price, 2).' '.($t->currency ?: 'USD') }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @elseif($event->event_type === 'free')
+                                <div class="mb-4 p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50 text-sm text-emerald-800 font-bold text-center flex items-center justify-center gap-2">
+                                    <span>🎟️</span>
+                                    <span>{{ __('Free General Admission') }}</span>
+                                </div>
+                            @endif
 
-                                @if($event->ticketTypes->count())
+                            @auth
+                                <form method="POST" action="{{ $hasOrdersBuyRoute ? route('orders.buy', $event->slug) : url('/e/'.$event->slug.'/buy') }}"
+                                      class="space-y-4"
+                                      x-data="{
+                                          selectedTypeId: '{{ $event->ticketTypes->firstWhere('is_active', true)?->id ?? $event->ticketTypes->first()?->id }}',
+                                          quantity: 1,
+                                          prices: {
+                                              @foreach($event->ticketTypes as $t)
+                                                  '{{ $t->id }}': {{ (float)$t->price }},
+                                              @endforeach
+                                          },
+                                          currencies: {
+                                              @foreach($event->ticketTypes as $t)
+                                                  '{{ $t->id }}': '{{ $t->currency ?: 'USD' }}',
+                                              @endforeach
+                                          },
+                                          getUnit() {
+                                              return this.prices[this.selectedTypeId] ?? 0;
+                                          },
+                                          getTotal() {
+                                              return (this.getUnit() * this.quantity).toFixed(2);
+                                          },
+                                          getCurr() {
+                                              return this.currencies[this.selectedTypeId] || 'USD';
+                                          }
+                                      }">
+                                    @csrf
+
+                                    @if($event->ticketTypes->count())
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ __('Select Ticket Category') }}</label>
+                                            <select name="ticket_type_id" x-model="selectedTypeId" class="input-field text-xs font-semibold rounded-xl bg-white">
+                                                @foreach($event->ticketTypes as $t)
+                                                    @php
+                                                        $meta = $t->tierMeta();
+                                                        $isAvail = $t->isAvailable();
+                                                    @endphp
+                                                    <option value="{{ $t->id }}" @selected(!$isAvail ? false : null)>
+                                                        {{ $meta['icon'] }} {{ __($t->name) }} — {{ (float)$t->price <= 0 ? __('FREE') : '$'.number_format((float)$t->price, 2).' '.($t->currency ?: 'USD') }} ({{ max($t->quantity - $t->sold, 0) }} {{ __('left') }}) @if(!$isAvail) [{{ __('Unavailable') }}] @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
+
                                     <div>
-                                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ __('Select Ticket Category') }}</label>
-                                        <select name="ticket_type_id" x-model="selectedTypeId" class="input-field text-xs font-semibold rounded-xl bg-white">
-                                            @foreach($event->ticketTypes as $t)
-                                                @php
-                                                    $meta = $t->tierMeta();
-                                                    $isAvail = $t->isAvailable();
-                                                @endphp
-                                                <option value="{{ $t->id }}" @selected(!$isAvail ? false : null)>
-                                                    {{ $meta['icon'] }} {{ __($t->name) }} — {{ (float)$t->price <= 0 ? __('FREE') : '$'.number_format((float)$t->price, 2).' '.($t->currency ?: 'USD') }} ({{ max($t->quantity - $t->sold, 0) }} {{ __('left') }}) @if(!$isAvail) [{{ __('Unavailable') }}] @endif
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <label class="text-xs font-bold text-slate-700">{{ __('Ticket Quantity') }}</label>
+                                            <span class="text-[11px] text-slate-400 font-medium">{{ __('Max 20 per order') }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" @click="if(quantity > 1) quantity--" class="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center text-sm">-</button>
+                                            <input type="number" min="1" max="20" name="quantity" x-model.number="quantity" class="input-field text-center font-bold text-sm w-20 py-1.5 rounded-xl" required>
+                                            <button type="button" @click="if(quantity < 20) quantity++" class="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center text-sm">+</button>
+                                        </div>
                                     </div>
-                                @endif
 
-                                <div>
-                                    <div class="flex items-center justify-between mb-1.5">
-                                        <label class="text-xs font-bold text-slate-700">{{ __('Ticket Quantity') }}</label>
-                                        <span class="text-[11px] text-slate-400 font-medium">{{ __('Max 20 per order') }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <button type="button" @click="if(quantity > 1) quantity--" class="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center text-sm">-</button>
-                                        <input type="number" min="1" max="20" name="quantity" x-model.number="quantity" class="input-field text-center font-bold text-sm w-20 py-1.5 rounded-xl" required>
-                                        <button type="button" @click="if(quantity < 20) quantity++" class="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center text-sm">+</button>
-                                    </div>
-                                </div>
+                                    {{-- Live Price Breakdown Box --}}
+                                    @if($event->ticketTypes->count())
+                                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs flex items-center justify-between">
+                                            <span class="text-slate-500 font-medium">{{ __('Total Estimated Price:') }}</span>
+                                            <span class="font-black text-slate-900 text-sm">
+                                                $<span x-text="getTotal()"></span> <span x-text="getCurr()" class="text-xs font-bold text-slate-500"></span>
+                                            </span>
+                                        </div>
+                                    @endif
 
-                                {{-- Live Price Breakdown Box --}}
-                                @if($event->ticketTypes->count())
-                                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs flex items-center justify-between">
-                                        <span class="text-slate-500 font-medium">{{ __('Total Estimated Price:') }}</span>
-                                        <span class="font-black text-slate-900 text-sm">
-                                            $<span x-text="getTotal()"></span> <span x-text="getCurr()" class="text-xs font-bold text-slate-500"></span>
+                                    @error('buy')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
+                                    @error('ticket_type_id')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
+                                    @error('quantity')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
+
+                                    <button class="btn-emerald w-full py-3 shadow-md shadow-emerald-950/20 font-bold flex items-center justify-center gap-2 rounded-xl"
+                                        @if($event->ticketTypes->count() && $remainingTotal <= 0) disabled @endif>
+                                        @if($event->event_type === 'free')
+                                            <span>{{ __('Register Free') }}</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                        @else
+                                            <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                            <span>{{ __('Checkout with Stripe') }}</span>
+                                        @endif
+                                    </button>
+
+                                    <div class="pt-3 border-t border-slate-100 flex items-center justify-center gap-4 text-[11px] text-slate-500 font-medium">
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            {{ __('Unique Code & QR') }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                                            {{ __('Stripe Protected') }}
                                         </span>
                                     </div>
-                                @endif
-
-                                @error('buy')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
-                                @error('ticket_type_id')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
-                                @error('quantity')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
-
-                                <button class="btn-emerald w-full py-3 shadow-md shadow-emerald-950/20 font-bold flex items-center justify-center gap-2 rounded-xl"
-                                    @if($event->ticketTypes->count() && $remainingTotal <= 0) disabled @endif>
-                                    @if($event->event_type === 'free')
-                                        <span>{{ __('Register Free') }}</span>
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                                    @else
-                                        <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                        <span>{{ __('Checkout with Stripe') }}</span>
-                                    @endif
-                                </button>
-
-                                <div class="pt-3 border-t border-slate-100 flex items-center justify-center gap-4 text-[11px] text-slate-500 font-medium">
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        {{ __('Unique Code & QR') }}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-                                        {{ __('Stripe Protected') }}
-                                    </span>
-                                </div>
-                            </form>
-                        @else
-                            <a href="{{ route('login') }}" class="btn-primary w-full text-center block py-3 rounded-xl font-bold">{{ __('Login to Book Tickets') }}</a>
-                        @endauth
+                                </form>
+                            @else
+                                <a href="{{ route('login') }}" class="btn-primary w-full text-center block py-3 rounded-xl font-bold">{{ __('Login to Book Tickets') }}</a>
+                            @endauth
+                        @endif
                     </div>
                 </div>
             </div>

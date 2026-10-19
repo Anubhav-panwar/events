@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\Storage;
 
 class EventService
 {
-    public function __construct(private EventRepository $repo)
-    {
+    public function __construct(
+        private EventRepository $repo,
+        private ?EventNotificationService $notificationService = null
+    ) {
+        $this->notificationService = $notificationService ?? app(EventNotificationService::class);
     }
 
     public function createEvent(VendorProfile $vendor, array $data, array $mediaFiles = []): Event
@@ -22,15 +25,31 @@ class EventService
         foreach ($mediaFiles as $file) {
             $this->storeMedia($event, $file);
         }
+
+        // If initially created with confirmed dates and published, mark as announced to avoid later spurious triggers
+        if ($event->status === 'published' && $event->isDateConfirmed()) {
+            $event->updateQuietly(['dates_announced_at' => now()]);
+        }
+
         return $event;
     }
 
     public function updateEvent(Event $event, array $data, array $mediaFiles = []): Event
     {
+        $wasAnnounced = !empty($event->dates_announced_at);
+
         $event = $this->repo->update($event, $data);
         foreach ($mediaFiles as $file) {
             $this->storeMedia($event, $file);
         }
+
+        $event->refresh();
+
+        // Trigger date announcement emails if dates were unannounced and are now confirmed & published
+        if (!$wasAnnounced && $event->status === 'published' && $event->isDateConfirmed()) {
+            $this->notificationService->notifySubscribersOfAnnouncedDates($event);
+        }
+
         return $event;
     }
 

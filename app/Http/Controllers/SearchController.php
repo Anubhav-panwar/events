@@ -141,7 +141,9 @@ class SearchController extends Controller
                 if ($hasDistanceSort) {
                     $query->orderBy('distance');
                 } else {
-                    $query->orderBy('event_date')->orderBy('start_time');
+                    $query->orderByRaw('CASE WHEN event_date IS NULL THEN 1 ELSE 0 END')
+                          ->orderBy('event_date')
+                          ->orderBy('start_time');
                 }
                 break;
         }

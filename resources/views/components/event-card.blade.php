@@ -49,18 +49,26 @@
                 @endif
 
                 <div class="absolute top-3 right-3">
-                    @if($price === null || (float) $price == 0)
+                    @if(!$event->isDateConfirmed() && $event->event_type !== 'free')
+                        <span class="px-3 py-1 bg-slate-900/80 backdrop-blur-sm text-amber-300 text-xs font-bold rounded-full shadow-lg border border-amber-400/30">{{ __('Price: TBA') }}</span>
+                    @elseif($event->event_type === 'free' || ($price !== null && (float)$price == 0))
                         <span class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full shadow-lg">{{ __('FREE') }}</span>
-                    @else
+                    @elseif($price !== null)
                         <span class="px-3 py-1 bg-white/95 backdrop-blur-sm text-slate-900 text-xs font-bold rounded-full shadow-lg">${{ number_format((float) $price, 2) }}</span>
+                    @else
+                        <span class="px-3 py-1 bg-slate-900/80 backdrop-blur-sm text-slate-200 text-xs font-bold rounded-full shadow-lg">{{ __('Price: TBA') }}</span>
                     @endif
                 </div>
 
                 <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                     <div class="flex items-center gap-2 text-white text-sm">
-                        <span class="font-medium">{{ $event->event_date?->translatedFormat('M d, Y') ?? $event->event_date?->format('M d, Y') }}</span>
-                        @if(isset($event->is_date_confirmed) && !$event->is_date_confirmed)
-                            <span class="px-1.5 py-0.5 bg-amber-500/80 text-[10px] text-white font-bold rounded">{{ __('Tentative') }}</span>
+                        @if($event->isDateConfirmed())
+                            <span class="font-medium">{{ $event->event_date?->translatedFormat('M d, Y') ?? $event->event_date?->format('M d, Y') }}</span>
+                        @else
+                            <span class="font-semibold text-amber-300 flex items-center gap-1 text-xs">
+                                <span>📅</span>
+                                <span>{{ __('Date: To Be Announced') }}</span>
+                            </span>
                         @endif
                     </div>
                     @if($hasCardReviews)
@@ -123,8 +131,14 @@
             @endif
 
             <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                <span class="text-sm text-gray-600">{{ $event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('g:i A') : $event->start_time }}</span>
-                <a href="{{ route('events.show', $event->slug) }}" class="text-emerald-700 font-semibold text-sm">{{ __('View Details') }}</a>
+                @if($event->isDateConfirmed())
+                    <span class="text-sm text-gray-600">{{ $event->start_time instanceof \Carbon\Carbon ? $event->start_time->format('g:i A') : $event->start_time }}</span>
+                @else
+                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        {{ __('Booking: Not Yet Available') }}
+                    </span>
+                @endif
+                <a href="{{ route('events.show', $event->slug) }}" class="text-emerald-700 font-semibold text-sm">{{ __('View Details') }} &rarr;</a>
             </div>
         </div>
     </div>

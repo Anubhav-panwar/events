@@ -23,16 +23,34 @@ class EventReminderController extends Controller
             'channel' => ['nullable', 'in:calendar,email,push'],
         ]);
 
-        EventReminder::updateOrCreate(
+        $defaultChannel = !$event->isDateConfirmed() ? 'email' : 'calendar';
+
+        $reminder = EventReminder::updateOrCreate(
             ['user_id' => $request->user()->id, 'event_id' => $event->id],
             [
                 'minutes_before' => $data['minutes_before'] ?? 1440,
-                'channel' => $data['channel'] ?? 'calendar',
+                'channel' => $data['channel'] ?? $defaultChannel,
                 'status' => 'active',
+                'notification_status' => 'pending',
+                'notification_error' => null,
             ]
         );
 
-        return back()->with('status', 'Reminder preference saved.');
+        $isTba = !$event->isDateConfirmed();
+        $message = $isTba
+            ? __("You're subscribed! We'll email you when the event details are announced.")
+            : __('Reminder preference saved.');
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'subscribed',
+                'button_text' => __('Reminder Enabled'),
+                'message' => $message,
+                'reminder' => $reminder,
+            ]);
+        }
+
+        return back()->with('status', $message);
     }
 
     public function destroy(Request $request, string $slug)
@@ -45,6 +63,16 @@ class EventReminderController extends Controller
             ->where('event_id', $event->id)
             ->delete();
 
-        return back()->with('status', 'Reminder removed.');
+        $message = __('Reminder cancelled.');
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'unsubscribed',
+                'button_text' => __('Notify Me'),
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with('status', $message);
     }
 }

@@ -63,9 +63,10 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Admission Type') }} <span class="text-red-500">*</span></label>
-                        <select name="event_type" class="input-field" id="eventTypeField" required>
-                            <option value="free" @selected(old('event_type', 'free') === 'free')>{{ __('Free Admission') }}</option>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Admission Type') }}</label>
+                        <select name="event_type" class="input-field" id="eventTypeField">
+                            <option value="">{{ __('To Be Announced (Pricing TBA)') }}</option>
+                            <option value="free" @selected(old('event_type') === 'free')>{{ __('Free Admission') }}</option>
                             <option value="paid" @selected(old('event_type') === 'paid')>{{ __('Paid Tickets') }}</option>
                         </select>
                         @error('event_type')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
@@ -73,7 +74,7 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Base Ticket Price ($)') }}</label>
-                        <input type="number" step="0.01" min="0" name="base_price" value="{{ old('base_price') }}" class="input-field" id="basePriceField" placeholder="0.00">
+                        <input type="number" step="0.01" min="0" name="base_price" value="{{ old('base_price') }}" class="input-field" id="basePriceField" placeholder="0.00 (TBA if left empty)">
                         @error('base_price')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
@@ -94,42 +95,45 @@
 
             {{-- Card 2: Date & Timing --}}
             <div class="surface p-6 space-y-4">
-                <div class="border-b border-slate-100 pb-3">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        {{ __('2. Schedule & Timing') }}
-                    </h2>
+                <div class="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            {{ __('2. Schedule & Timing') }}
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ __('Leave empty if event date is To Be Announced (TBA).') }}</p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Event Date') }} <span class="text-red-500">*</span></label>
-                        <input type="date" name="event_date" value="{{ old('event_date', date('Y-m-d', strtotime('+7 days'))) }}" class="input-field" required>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Event Date') }} <span class="text-xs font-normal text-slate-400">({{ __('Optional / TBA') }})</span></label>
+                        <input type="date" name="event_date" value="{{ old('event_date') }}" class="input-field">
                         @error('event_date')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Start Time') }} <span class="text-red-500">*</span></label>
-                        <input type="time" name="start_time" value="{{ old('start_time', '18:00') }}" class="input-field" required>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('Start Time') }} <span class="text-xs font-normal text-slate-400">({{ __('Optional') }})</span></label>
+                        <input type="time" name="start_time" value="{{ old('start_time') }}" class="input-field">
                         @error('start_time')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('End Time') }}</label>
-                        <input type="time" name="end_time" value="{{ old('end_time', '21:00') }}" class="input-field">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">{{ __('End Time') }} <span class="text-xs font-normal text-slate-400">({{ __('Optional') }})</span></label>
+                        <input type="time" name="end_time" value="{{ old('end_time') }}" class="input-field">
                         @error('end_time')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
 
                 <div class="mt-4 pt-3 border-t border-slate-100 flex items-start gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60">
                     <input type="hidden" name="is_date_confirmed" value="0">
-                    <input type="checkbox" id="is_date_confirmed" name="is_date_confirmed" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" @checked(old('is_date_confirmed', true))>
+                    <input type="checkbox" id="is_date_confirmed" name="is_date_confirmed" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" @checked(old('is_date_confirmed', false))>
                     <div>
                         <label for="is_date_confirmed" class="text-xs font-bold text-slate-800 cursor-pointer block">
-                            {{ __('Confirmed Event Schedule') }}
+                            {{ __('Confirmed Event Schedule & Ready for Booking') }}
                         </label>
                         <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                            {{ __('Keep checked if this date and time are confirmed. If unchecked, the event date will be marked as tentative and calendar integration (Google Calendar & .ICS downloads) will remain unavailable until confirmed.') }}
+                            {{ __('Check this ONLY when the event date, start time, and booking configuration are confirmed. If unchecked or if date is left empty, the event will be published as "Date: To Be Announced", ticket booking remains disabled, and customers can subscribe to "Notify Me" reminders.') }}
                         </p>
                     </div>
                 </div>
