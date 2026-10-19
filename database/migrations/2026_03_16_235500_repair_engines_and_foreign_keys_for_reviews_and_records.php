@@ -14,18 +14,37 @@ return new class extends Migration
     {
         $isMySql = in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb']);
 
-        // 1. Ensure InnoDB storage engine for all affected tables on MySQL/MariaDB
-        $tablesToInnoDB = ['event_reviews', 'vendor_reviews', 'vendor_share_clicks', 'user_block_records'];
+        // 1. Ensure InnoDB storage engine for all tables in the database on MySQL/MariaDB
         if ($isMySql) {
-            foreach ($tablesToInnoDB as $tableName) {
-                if (Schema::hasTable($tableName)) {
-                    $tableInfo = DB::select(
-                        "SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?",
-                        [$tableName]
-                    );
-                    if (!empty($tableInfo) && strcasecmp($tableInfo[0]->ENGINE, 'InnoDB') !== 0) {
-                        DB::statement("ALTER TABLE `{$tableName}` ENGINE = InnoDB");
+            $dbName = Schema::getConnection()->getDatabaseName();
+            try {
+                $allTables = DB::select("
+                    SELECT TABLE_NAME, ENGINE
+                    FROM information_schema.TABLES
+                    WHERE (TABLE_SCHEMA = DATABASE() OR LOWER(TABLE_SCHEMA) = LOWER(?))
+                      AND TABLE_TYPE = 'BASE TABLE'
+                ", [$dbName]);
+
+                foreach ($allTables as $t) {
+                    if ($t->ENGINE && strcasecmp($t->ENGINE, 'InnoDB') !== 0) {
+                        DB::statement("ALTER TABLE `{$t->TABLE_NAME}` ENGINE = InnoDB");
                     }
+                }
+            } catch (\Throwable $e) {}
+
+            // Explicitly ensure all core referenced parent and child tables are converted to InnoDB
+            $coreTables = [
+                'users', 'vendor_profiles', 'categories', 'category_vendor_profile',
+                'events', 'event_media', 'ticket_types', 'orders', 'order_items', 'tickets',
+                'event_saves', 'vendor_follows', 'posts', 'event_share_clicks', 'vendor_media',
+                'event_referrals', 'event_reminders',
+                'event_reviews', 'vendor_reviews', 'vendor_share_clicks', 'user_block_records'
+            ];
+            foreach ($coreTables as $tableName) {
+                if (Schema::hasTable($tableName)) {
+                    try {
+                        DB::statement("ALTER TABLE `{$tableName}` ENGINE = InnoDB");
+                    } catch (\Throwable $e) {}
                 }
             }
         }

@@ -11,6 +11,16 @@ return new class extends Migration
     {
         $isMySql = in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb']);
 
+        if ($isMySql) {
+            foreach (['events', 'users', 'orders', 'vendor_profiles', 'event_reviews', 'vendor_reviews'] as $t) {
+                if (Schema::hasTable($t)) {
+                    try {
+                        DB::statement("ALTER TABLE `{$t}` ENGINE = InnoDB");
+                    } catch (\Throwable $e) {}
+                }
+            }
+        }
+
         if (!Schema::hasTable('event_reviews')) {
             Schema::create('event_reviews', function (Blueprint $table) {
                 $table->engine = 'InnoDB';
@@ -27,10 +37,6 @@ return new class extends Migration
                 $table->index(['event_id', 'rating']);
             });
         } else {
-            if ($isMySql) {
-                DB::statement("ALTER TABLE `event_reviews` ENGINE = InnoDB");
-            }
-
             Schema::table('event_reviews', function (Blueprint $table) {
                 if (!Schema::hasColumn('event_reviews', 'event_id')) {
                     $table->foreignId('event_id')->constrained('events')->cascadeOnDelete();
@@ -82,10 +88,6 @@ return new class extends Migration
                 $table->index(['vendor_profile_id', 'rating']);
             });
         } else {
-            if ($isMySql) {
-                DB::statement("ALTER TABLE `vendor_reviews` ENGINE = InnoDB");
-            }
-
             Schema::table('vendor_reviews', function (Blueprint $table) {
                 if (!Schema::hasColumn('vendor_reviews', 'vendor_profile_id')) {
                     $table->foreignId('vendor_profile_id')->constrained('vendor_profiles')->cascadeOnDelete();

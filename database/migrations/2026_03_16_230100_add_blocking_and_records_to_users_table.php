@@ -11,6 +11,16 @@ return new class extends Migration
     {
         $isMySql = in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb']);
 
+        if ($isMySql) {
+            foreach (['users', 'user_block_records'] as $t) {
+                if (Schema::hasTable($t)) {
+                    try {
+                        DB::statement("ALTER TABLE `{$t}` ENGINE = InnoDB");
+                    } catch (\Throwable $e) {}
+                }
+            }
+        }
+
         if (Schema::hasTable('users')) {
             Schema::table('users', function (Blueprint $table) {
                 if (!Schema::hasColumn('users', 'is_blocked')) {
@@ -52,10 +62,6 @@ return new class extends Migration
                 $table->index(['user_id', 'created_at']);
             });
         } else {
-            if ($isMySql) {
-                DB::statement("ALTER TABLE `user_block_records` ENGINE = InnoDB");
-            }
-
             Schema::table('user_block_records', function (Blueprint $table) {
                 if (!Schema::hasColumn('user_block_records', 'user_id')) {
                     $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();

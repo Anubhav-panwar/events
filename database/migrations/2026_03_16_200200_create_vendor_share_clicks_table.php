@@ -11,6 +11,16 @@ return new class extends Migration
     {
         $isMySql = in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb']);
 
+        if ($isMySql) {
+            foreach (['vendor_profiles', 'users', 'vendor_share_clicks'] as $t) {
+                if (Schema::hasTable($t)) {
+                    try {
+                        DB::statement("ALTER TABLE `{$t}` ENGINE = InnoDB");
+                    } catch (\Throwable $e) {}
+                }
+            }
+        }
+
         if (!Schema::hasTable('vendor_share_clicks')) {
             Schema::create('vendor_share_clicks', function (Blueprint $table) {
                 $table->engine = 'InnoDB';
@@ -26,10 +36,6 @@ return new class extends Migration
                 $table->index(['vendor_profile_id', 'channel']);
             });
         } else {
-            if ($isMySql) {
-                DB::statement("ALTER TABLE `vendor_share_clicks` ENGINE = InnoDB");
-            }
-
             Schema::table('vendor_share_clicks', function (Blueprint $table) {
                 if (!Schema::hasColumn('vendor_share_clicks', 'vendor_profile_id')) {
                     $table->foreignId('vendor_profile_id')->constrained('vendor_profiles')->cascadeOnDelete();
