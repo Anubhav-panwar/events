@@ -38,6 +38,8 @@
              class="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-sky-400 to-purple-500 animate-pulse z-50">
         </div>
 
+        <div x-show="chartError" x-cloak role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" x-text="chartError"></div>
+
         {{-- Page Header --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
             <div>
@@ -398,7 +400,7 @@
                     {{ number_format($overall['available_tickets_count']) }}
                 </div>
                 <div class="mt-1.5 flex items-center justify-between text-[11px] text-slate-500">
-                    <span class="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded"><span x-text="overall.occupancy_rate">{{ $overall['occupancy_rate'] }}</span>% {{ __('Sold out') }}</span>
+                    <span class="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded"><span x-text="formatOccupancy()">{{ number_format($overall['total_capacity'] > 0 ? $overall['total_tickets_sold'] / $overall['total_capacity'] * 100 : 0, 2) }}</span>% {{ __('Sold') }}</span>
                     <span class="text-slate-400">/ <span x-text="formatNumber(overall.total_capacity)">{{ number_format($overall['total_capacity']) }}</span></span>
                 </div>
             </div>
@@ -567,7 +569,7 @@
                             <p class="text-xs text-slate-500 mt-0.5">{{ __('Overall capacity allocation') }}</p>
                         </div>
                         <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            {{ $overall['occupancy_rate'] }}% {{ __('Sold out') }}
+                            <span x-text="formatOccupancy()">{{ number_format($overall['total_capacity'] > 0 ? $overall['total_tickets_sold'] / $overall['total_capacity'] * 100 : 0, 2) }}</span>% {{ __('Sold') }}
                         </span>
                     </div>
 
@@ -580,17 +582,17 @@
                     <div class="flex items-center justify-around text-xs">
                         <div>
                             <p class="text-slate-400 text-[10px] uppercase font-bold">{{ __('Sold') }}</p>
-                            <p class="font-extrabold text-emerald-700">{{ number_format($overall['total_tickets_sold']) }}</p>
+                            <p class="font-extrabold text-emerald-700" x-text="formatNumber(overall.total_tickets_sold)">{{ number_format($overall['total_tickets_sold']) }}</p>
                         </div>
                         <div class="w-px h-6 bg-slate-200"></div>
                         <div>
                             <p class="text-slate-400 text-[10px] uppercase font-bold">{{ __('Available') }}</p>
-                            <p class="font-extrabold text-slate-800">{{ number_format($overall['available_tickets_count']) }}</p>
+                            <p class="font-extrabold text-slate-800" x-text="formatNumber(overall.available_tickets_count)">{{ number_format($overall['available_tickets_count']) }}</p>
                         </div>
                         <div class="w-px h-6 bg-slate-200"></div>
                         <div>
                             <p class="text-slate-400 text-[10px] uppercase font-bold">{{ __('Capacity') }}</p>
-                            <p class="font-extrabold text-slate-600">{{ number_format($overall['total_capacity']) }}</p>
+                            <p class="font-extrabold text-slate-600" x-text="formatNumber(overall.total_capacity)">{{ number_format($overall['total_capacity']) }}</p>
                         </div>
                     </div>
                 </div>
@@ -1046,8 +1048,13 @@
 
     <script>
         window.vendorAnalyticsDashboard = function () {
+            // Chart.js instances must stay outside Alpine's reactive proxy. Chart.js
+            // traverses its own object graph during updates; proxying it causes recursion.
+            const charts = { trend: null, category: null, compare: null, inventory: null };
+
             return {
                 isLoading: false,
+                chartError: '',
                 isAutoRefresh: false,
                 refreshTimer: null,
                 lastUpdatedText: '{{ __('Updated just now') }}',
@@ -1074,12 +1081,6 @@
                 inventoryData: @json($inventory_chart_data),
                 eventCompareData: @json($event_chart_data),
 
-                // Chart instances
-                trendChart: null,
-                catChart: null,
-                compareChart: null,
-                invChart: null,
-
                 init() {
                     const self = this;
                     window.currentAnalyticsDashboard = self;
@@ -1091,7 +1092,17 @@
                     });
                 },
 
+                destroy() {
+                    clearInterval(this.refreshTimer);
+                    Object.values(charts).forEach(chart => chart?.destroy());
+                },
+
                 initCharts() {
+                    if (typeof Chart === 'undefined') {
+                        this.chartError = '{{ __('Charts could not be loaded. Please refresh the page to try again.') }}';
+                        return;
+                    }
+                    this.chartError = '';
                     const self = this;
                     const modernPalette = [
                         '#10b981', '#06b6d4', '#6366f1', '#8b5cf6',
@@ -1106,7 +1117,7 @@
                         emeraldGradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
                         emeraldGradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
-                        this.trendChart = new Chart(trendCtx, {
+                        charts.trend = new Chart(trendCtx, {
                             type: 'line',
                             data: {
                                 labels: (this.trendData || []).map(d => d.label),
@@ -1159,7 +1170,7 @@
                     // 2. Category Donut Chart
                     const catCtx = document.getElementById('categoryDonutChart');
                     if (catCtx && typeof Chart !== 'undefined') {
-                        this.catChart = new Chart(catCtx, {
+                        charts.category = new Chart(catCtx, {
                             type: 'doughnut',
                             data: {
                                 labels: (this.catChartData?.labels || []),
@@ -1205,7 +1216,7 @@
                     // 3. Event Comparison Bar Chart with Drill-down Click
                     const eventCompCtx = document.getElementById('eventCompareChart');
                     if (eventCompCtx && typeof Chart !== 'undefined') {
-                        this.compareChart = new Chart(eventCompCtx, {
+                        charts.compare = new Chart(eventCompCtx, {
                             type: 'bar',
                             data: {
                                 labels: (this.eventCompareData?.labels || []),
@@ -1284,7 +1295,7 @@
                     // 4. Inventory Donut Chart
                     const invCtx = document.getElementById('inventoryDonutChart');
                     if (invCtx && typeof Chart !== 'undefined') {
-                        this.invChart = new Chart(invCtx, {
+                        charts.inventory = new Chart(invCtx, {
                             type: 'doughnut',
                             data: {
                                 labels: (this.inventoryData?.labels || []),
@@ -1393,48 +1404,48 @@
 
                 updateTrendChart(metricKey) {
                     this.chartMetric = metricKey;
-                    if (!this.trendChart) return;
-                    this.trendChart.data.datasets = [this.getTrendDataset(metricKey)];
-                    this.trendChart.options.scales.y.ticks.callback = function (v) {
+                    if (!charts.trend) return;
+                    charts.trend.data.datasets = [this.getTrendDataset(metricKey)];
+                    charts.trend.options.scales.y.ticks.callback = function (v) {
                         return metricKey === 'tickets_sold' ? v : '$' + v;
                     };
-                    this.trendChart.update();
+                    charts.trend.update();
                 },
 
                 updateCompareChart(mode) {
                     this.compareMetric = mode;
-                    if (!this.compareChart) return;
-                    this.compareChart.data.datasets = this.getCompareDatasets(mode);
-                    this.compareChart.options.scales.y.ticks.callback = function (v) {
+                    if (!charts.compare) return;
+                    charts.compare.data.datasets = this.getCompareDatasets(mode);
+                    charts.compare.options.scales.y.ticks.callback = function (v) {
                         return mode === 'tickets' ? v : '$' + v;
                     };
-                    this.compareChart.update();
+                    charts.compare.update();
                 },
 
                 updateAllCharts() {
-                    if (this.trendChart) {
-                        this.trendChart.data.labels = (this.trendData || []).map(d => d.label);
-                        this.trendChart.data.datasets = [this.getTrendDataset(this.chartMetric)];
-                        this.trendChart.update();
+                    if (charts.trend) {
+                        charts.trend.data.labels = (this.trendData || []).map(d => d.label);
+                        charts.trend.data.datasets = [this.getTrendDataset(this.chartMetric)];
+                        charts.trend.update();
                     }
-                    if (this.catChart) {
-                        this.catChart.data.labels = (this.catChartData?.labels || []);
-                        if (this.catChart.data.datasets[0]) {
-                            this.catChart.data.datasets[0].data = (this.catChartData?.gross_revenue || []);
+                    if (charts.category) {
+                        charts.category.data.labels = (this.catChartData?.labels || []);
+                        if (charts.category.data.datasets[0]) {
+                            charts.category.data.datasets[0].data = (this.catChartData?.gross_revenue || []);
                         }
-                        this.catChart.update();
+                        charts.category.update();
                     }
-                    if (this.compareChart) {
-                        this.compareChart.data.labels = (this.eventCompareData?.labels || []);
-                        this.compareChart.data.datasets = this.getCompareDatasets(this.compareMetric);
-                        this.compareChart.update();
+                    if (charts.compare) {
+                        charts.compare.data.labels = (this.eventCompareData?.labels || []);
+                        charts.compare.data.datasets = this.getCompareDatasets(this.compareMetric);
+                        charts.compare.update();
                     }
-                    if (this.invChart) {
-                        this.invChart.data.labels = (this.inventoryData?.labels || []);
-                        if (this.invChart.data.datasets[0]) {
-                            this.invChart.data.datasets[0].data = (this.inventoryData?.counts || []);
+                    if (charts.inventory) {
+                        charts.inventory.data.labels = (this.inventoryData?.labels || []);
+                        if (charts.inventory.data.datasets[0]) {
+                            charts.inventory.data.datasets[0].data = (this.inventoryData?.counts || []);
                         }
-                        this.invChart.update();
+                        charts.inventory.update();
                     }
                 },
 
@@ -1536,6 +1547,12 @@
 
                 formatMoney(val) {
                     return Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+
+                formatOccupancy() {
+                    const rate = this.overall.total_capacity > 0
+                        ? Number(this.overall.total_tickets_sold || 0) / this.overall.total_capacity * 100 : 0;
+                    return rate > 0 && rate < 0.01 ? '<0.01' : rate.toFixed(2);
                 },
 
                 formatNumber(val) {
