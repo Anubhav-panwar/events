@@ -13,11 +13,13 @@ class OrderItem extends Model
         'order_id',
         'ticket_type_id',
         'quantity',
+        'refunded_quantity',
         'unit_price',
     ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
+        'refunded_quantity' => 'integer',
     ];
 
     public function order()

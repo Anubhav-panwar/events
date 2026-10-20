@@ -103,7 +103,7 @@ class VendorEventController extends Controller
         Gate::authorize('update', $event);
         $count = app(\App\Services\EventNotificationService::class)->retryFailedNotifications($event);
 
-        return back()->with('status', __(':count reminder notification(s) sent successfully.', ['count' => $count]));
+        return back()->with('status', __(':count reminder notification(s) queued for retry.', ['count' => $count]));
     }
 
     private function normalizePayload(array $data): array

@@ -14,7 +14,7 @@
     @php
         $event = $ticket->orderItem?->ticketType?->event;
         $ticketType = $ticket->orderItem?->ticketType;
-        $qrCode = $ticket->qr_data ?: $ticket->code;
+        $qrCode = $ticket->code;
     @endphp
 
     <section class="page-section">

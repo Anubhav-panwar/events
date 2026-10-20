@@ -55,13 +55,8 @@ class TicketService
 
     private function buildQrPayload(Order $order, OrderItem $item, string $code): string
     {
-        return json_encode([
-            'ticket_code' => $code,
-            'order_id' => $order->id,
-            'event_id' => $order->event_id ?: $item->ticketType?->event_id,
-            'tier' => $item->ticketType?->name,
-            'attendee' => $order->user?->name,
-            'issued_at' => now()->toIso8601String(),
-        ], JSON_UNESCAPED_SLASHES);
+        // QR must carry only the opaque code. Validation resolves ownership and
+        // ticket details server-side after the code is submitted.
+        return $code;
     }
 }

@@ -363,7 +363,15 @@
 
                 {{-- Users Table --}}
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-left text-xs">
+                    <table class="users-directory-table text-left text-xs">
+                        <colgroup>
+                            <col style="width: 22%">
+                            <col style="width: 16%">
+                            <col style="width: 15%">
+                            <col style="width: 15%">
+                            <col style="width: 10%">
+                            <col style="width: 22%">
+                        </colgroup>
                         <thead>
                             <tr class="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                                 <th class="pb-3 pr-4">User Details</th>
@@ -391,7 +399,7 @@
                                                         <span class="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200">You</span>
                                                     @endif
                                                 </div>
-                                                <div class="flex items-center gap-2 mt-0.5">
+                                                <div class="flex flex-wrap items-center gap-2 mt-0.5">
                                                     <span class="text-[11px] text-slate-500 truncate">{{ $u->email }}</span>
                                                     @if($u->email_verified_at)
                                                         <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">✓ Verified</span>
@@ -404,7 +412,7 @@
                                     </td>
 
                                     {{-- Account Status Badge --}}
-                                    <td class="py-3.5 pr-4 whitespace-nowrap">
+                                    <td class="py-3.5 pr-4">
                                         @if($u->is_blocked)
                                             <div class="space-y-1">
                                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold border border-rose-200 text-[11px]">
@@ -412,7 +420,7 @@
                                                     <span>{{ __('Blocked') }}</span>
                                                 </span>
                                                 @if($u->blocked_reason)
-                                                    <p class="text-[10px] text-rose-700 font-medium max-w-[170px] truncate" title="{{ $u->blocked_reason }}">
+                                                    <p class="user-block-reason text-[11px] text-red-700 font-medium" title="{{ $u->blocked_reason }}">
                                                         "{{ $u->blocked_reason }}"
                                                     </p>
                                                 @endif
@@ -1362,19 +1370,19 @@
     {{-- ========================================================================= --}}
     {{-- MODAL: BLOCK USER ACCOUNT --}}
     {{-- ========================================================================= --}}
-    <div id="blockUserModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 border border-slate-200 relative">
+    <div id="blockUserModal" role="dialog" aria-modal="true" aria-labelledby="blockModalHeading" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="block-user-dialog bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 border border-slate-200 relative">
             <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900">{{ __('Block User Account') }}</h3>
+                        <h3 id="blockModalHeading" class="text-lg font-bold text-slate-900">{{ __('Block User Account') }}</h3>
                         <p class="text-xs text-slate-500">{{ __('Suspend access, terminate active sessions, and record audit trail.') }}</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeBlockUserModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                <button type="button" onclick="closeBlockUserModal()" aria-label="{{ __('Close') }}" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -1402,20 +1410,20 @@
             <form method="POST" id="blockUserForm" action="" class="space-y-4">
                 @csrf
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label for="blockReason" class="block text-xs font-bold text-slate-700 mb-1.5">
                         {{ __('Administrative Reason for Blocking *') }}
                     </label>
-                    <textarea name="reason"
+                    <textarea name="reason" id="blockReason" maxlength="500" aria-describedby="blockReasonHelp"
                               required
                               rows="3"
                               class="input-field text-xs"
                               placeholder="{{ __('e.g. Terms of service violation, abusive behavior, fraudulent chargebacks, spam activity...') }}"></textarea>
-                    <p class="text-[10px] text-slate-400 mt-1">{{ __('This reason will be logged in the administrative audit record and displayed to the user upon login attempt.') }}</p>
+                    <p id="blockReasonHelp" class="text-[10px] text-slate-400 mt-1">{{ __('Maximum 500 characters. This reason will be logged in the administrative audit record and displayed to the user upon login attempt.') }}</p>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <div class="block-user-actions flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                     <button type="button" onclick="closeBlockUserModal()" class="btn-secondary text-xs py-2 px-4">{{ __('Cancel') }}</button>
-                    <button type="submit" class="text-xs font-bold py-2 px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors flex items-center gap-1.5">
+                    <button type="submit" class="btn-danger text-xs font-bold py-2 px-5 rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                         <span>{{ __('Confirm & Block Account') }}</span>
                     </button>

@@ -14,8 +14,11 @@ class EventReminder extends Model
     public const STATUS_DISABLED = 'disabled';
 
     public const STATUS_PENDING = 'pending';
-    public const STATUS_SENT = 'sent';
-    public const STATUS_NOTIFIED = 'sent';
+    public const STATUS_QUEUED = 'queued';
+    public const STATUS_ATTEMPTED = 'attempted';
+    public const STATUS_PROVIDER_ACCEPTED = 'provider_accepted';
+    public const STATUS_SENT = self::STATUS_PROVIDER_ACCEPTED;
+    public const STATUS_NOTIFIED = self::STATUS_PROVIDER_ACCEPTED;
     public const STATUS_FAILED = 'failed';
 
     protected $fillable = [
@@ -27,6 +30,9 @@ class EventReminder extends Model
         'notification_status',
         'notified_at',
         'last_sent_at',
+        'queued_at',
+        'attempted_at',
+        'provider_accepted_at',
         'notification_error',
         'retry_count',
     ];
@@ -35,6 +41,9 @@ class EventReminder extends Model
         'minutes_before' => 'integer',
         'notified_at' => 'datetime',
         'last_sent_at' => 'datetime',
+        'queued_at' => 'datetime',
+        'attempted_at' => 'datetime',
+        'provider_accepted_at' => 'datetime',
         'retry_count' => 'integer',
     ];
 
@@ -55,7 +64,7 @@ class EventReminder extends Model
 
     public function isNotified(): bool
     {
-        return $this->notification_status === 'sent';
+        return in_array($this->notification_status, [self::STATUS_PROVIDER_ACCEPTED, 'sent'], true);
     }
 
     public function isFailed(): bool

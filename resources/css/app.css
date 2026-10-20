@@ -59,6 +59,43 @@
   }
 
   /* Solid Professional Buttons */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 border border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2;
+  }
+
+  .users-directory-table {
+    width: 100%;
+    min-width: 1160px;
+    table-layout: fixed;
+  }
+
+  .users-directory-table th,
+  .users-directory-table td {
+    overflow-wrap: anywhere;
+  }
+
+  .user-block-reason {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .block-user-dialog {
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 480px) {
+    .block-user-actions {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+  }
+
   .btn-primary {
     @apply inline-flex items-center justify-center px-6 py-2.5 rounded text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-all duration-200 shadow-sm;
   }

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\EventDatesAnnouncedMail;
+use App\Jobs\SendEventReminderEmail;
 use App\Models\Category;
 use App\Models\Event;
 use App\Models\EventReminder;
@@ -13,6 +14,7 @@ use App\Services\EventNotificationService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class UpcomingEventsAndNotifyMeTest extends TestCase
@@ -539,6 +541,7 @@ class UpcomingEventsAndNotifyMeTest extends TestCase
 
     public function test_one_recipient_failure_does_not_stop_other_reminder_emails(): void
     {
+        Queue::fake();
         $event = Event::create([
             'vendor_profile_id' => $this->vendorProfile->id,
             'category_id' => $this->category->id,
@@ -572,9 +575,19 @@ class UpcomingEventsAndNotifyMeTest extends TestCase
             ->andThrow(new \RuntimeException('SMTP failed, password=should-not-be-stored'));
         Mail::shouldReceive('to')->once()->with('bob@example.com')->andReturn($pendingMail);
 
-        $sentCount = app(EventNotificationService::class)->notifySubscribersOfAnnouncedDates($event);
+        $queuedCount = app(EventNotificationService::class)->notifySubscribersOfAnnouncedDates($event);
+        $this->assertSame(2, $queuedCount);
+        Queue::assertPushed(SendEventReminderEmail::class, 2);
 
-        $this->assertSame(1, $sentCount);
+        try {
+            (new SendEventReminderEmail($failedReminder->id, 'test-correlation'))->handle();
+            $this->fail('Expected the failed recipient transport to throw.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('SMTP failed', $exception->getMessage());
+            (new SendEventReminderEmail($failedReminder->id, 'test-correlation'))->failed($exception);
+        }
+        (new SendEventReminderEmail($successfulReminder->id, 'test-correlation'))->handle();
+
         $this->assertSame(EventReminder::STATUS_FAILED, $failedReminder->fresh()->notification_status);
         $this->assertStringNotContainsString('should-not-be-stored', $failedReminder->fresh()->notification_error);
         $this->assertSame(EventReminder::STATUS_SENT, $successfulReminder->fresh()->notification_status);

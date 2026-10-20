@@ -15,7 +15,7 @@
     $totalEvents = $events ? $events->total() : 0;
     $publishedEvents = $profile ? $profile->events()->where('status', 'published')->count() : 0;
     $draftEvents = $profile ? $profile->events()->where('status', 'draft')->count() : 0;
-    $paidOrders = $profile ? \App\Models\Order::where('vendor_profile_id', $profile->id)->where('status', 'paid')->with('items')->get() : collect();
+    $paidOrders = $profile ? \App\Models\Order::where('vendor_profile_id', $profile->id)->whereIn('status', ['paid', 'partially_refunded'])->with('items')->get() : collect();
     $totalOrdersCount = $paidOrders->count();
     $totalTicketsSold = $paidOrders->sum(fn ($o) => (int) $o->items->sum('quantity'));
     $totalRevenue = $paidOrders->sum('total');

@@ -238,14 +238,90 @@ class VendorAnalyticsAndReportingTest extends TestCase
         $response = $this->actingAs($vendorUser)->get(route('vendor.analytics.index'));
         $response->assertOk();
 
-        // Gross = $100 (only paid orders count towards gross)
-        $response->assertSee('100.00');
+        // Gross records all captured sales, including the order later refunded.
+        $response->assertSee('150.00');
         // Refunded = $50.00
         $response->assertSee('50.00');
         // Platform fee = $5.00
         $response->assertSee('5.00');
-        // Net Revenue = $100 - $50 - $5 = $45.00
-        $response->assertSee('45.00');
+        // Net Revenue = $150 - $50 - $5 = $95.00
+        $response->assertSee('95.00');
+    }
+
+    public function test_partial_refund_tracks_money_and_explicit_ticket_quantity_without_removing_whole_order(): void
+    {
+        $vendorUser = User::query()->firstWhere('email', 'vendor@example.com');
+        $vendor = VendorProfile::query()->firstWhere('user_id', $vendorUser->id);
+        $buyer = User::query()->firstWhere('email', 'user@example.com');
+        $event = Event::create([
+            'vendor_profile_id' => $vendor->id, 'title' => 'Partial Refund Test', 'slug' => 'partial-refund-test',
+            'event_date' => now()->addDays(12)->toDateString(), 'start_time' => '18:00', 'capacity' => 20,
+            'status' => 'published', 'is_date_confirmed' => true, 'event_type' => 'paid', 'base_price' => 40,
+        ]);
+        $tier = TicketType::create(['event_id' => $event->id, 'name' => 'Standard', 'price' => 40, 'currency' => 'USD', 'quantity' => 20, 'sold' => 3]);
+        $order = Order::create([
+            'user_id' => $buyer->id, 'vendor_profile_id' => $vendor->id, 'event_id' => $event->id,
+            'total' => 120, 'platform_fee' => 6, 'refunded_amount' => 0, 'currency' => 'USD',
+            'status' => 'paid', 'payment_provider' => 'stripe', 'paid_at' => now(),
+        ]);
+        $item = OrderItem::create(['order_id' => $order->id, 'ticket_type_id' => $tier->id, 'quantity' => 3, 'unit_price' => 40]);
+        foreach (range(1, 3) as $index) {
+            Ticket::create(['order_item_id' => $item->id, 'code' => 'PARTIAL-' . $index, 'issued_at' => now()]);
+        }
+
+        $refunded = app(CheckoutService::class)->refund($order, 40, [$item->id => 1]);
+        $this->assertSame('partially_refunded', $refunded->status);
+        $this->assertSame('40.00', $refunded->refunded_amount);
+        $this->assertSame(1, (int) $item->fresh()->refunded_quantity);
+        $this->assertSame(1, Ticket::where('order_item_id', $item->id)->whereNotNull('refunded_at')->count());
+        $this->assertFalse(Ticket::where('order_item_id', $item->id)->whereNotNull('refunded_at')->first()->isValid());
+        $this->assertSame(2, (int) $tier->fresh()->sold);
+
+        $analytics = app(\App\Services\VendorAnalyticsService::class)->getAnalytics($vendor);
+        $this->assertSame(120.0, $analytics['overall']['gross_revenue']);
+        $this->assertSame(40.0, $analytics['overall']['refunded_amount']);
+        $this->assertSame(4.0, $analytics['overall']['platform_fees']);
+        $this->assertSame(76.0, $analytics['overall']['net_revenue']);
+        $this->assertSame(2, $analytics['overall']['paid_tickets_count']);
+        $this->assertSame(1, $analytics['overall']['refunded_tickets_count']);
+        $this->assertSame(1, $analytics['overall']['partially_refunded_orders_count']);
+
+        $csv = $this->actingAs($vendorUser)->get(route('vendor.analytics.export', ['type' => 'summary']))->streamedContent();
+        $this->assertStringContainsString('USD,120.00,40.00,4.00,76.00', $csv);
+    }
+
+    public function test_pending_orders_are_excluded_and_currency_totals_are_grouped_without_conversion(): void
+    {
+        $vendorUser = User::query()->firstWhere('email', 'vendor@example.com');
+        $vendor = VendorProfile::query()->firstWhere('user_id', $vendorUser->id);
+        $buyer = User::query()->firstWhere('email', 'user@example.com');
+        $event = Event::create([
+            'vendor_profile_id' => $vendor->id, 'title' => 'Currency Test', 'slug' => 'currency-test',
+            'event_date' => now()->addDays(12)->toDateString(), 'start_time' => '18:00', 'capacity' => 20,
+            'status' => 'published', 'is_date_confirmed' => true, 'event_type' => 'paid', 'base_price' => 25,
+        ]);
+        $usd = TicketType::create(['event_id' => $event->id, 'name' => 'USD', 'price' => 100, 'currency' => 'USD', 'quantity' => 20]);
+        $eur = TicketType::create(['event_id' => $event->id, 'name' => 'EUR', 'price' => 80, 'currency' => 'EUR', 'quantity' => 20]);
+        foreach ([[$usd, 100, 'USD', 'paid'], [$eur, 80, 'EUR', 'partially_refunded'], [$usd, 900, 'USD', 'pending']] as [$tier, $total, $currency, $status]) {
+            $order = Order::create([
+                'user_id' => $buyer->id, 'vendor_profile_id' => $vendor->id, 'event_id' => $event->id,
+                'total' => $total, 'platform_fee' => $status === 'pending' ? 0 : round($total * .05, 2),
+                'refunded_amount' => $status === 'partially_refunded' ? 20 : 0, 'currency' => $currency,
+                'status' => $status, 'payment_provider' => 'stripe', 'paid_at' => $status === 'pending' ? null : now(),
+            ]);
+            OrderItem::create(['order_id' => $order->id, 'ticket_type_id' => $tier->id, 'quantity' => 1, 'unit_price' => $total]);
+        }
+
+        $analytics = app(\App\Services\VendorAnalyticsService::class)->getAnalytics($vendor);
+        $this->assertSame('MULTI', $analytics['overall']['currency']);
+        $this->assertNull($analytics['overall']['gross_revenue']);
+        $this->assertSame(2, count($analytics['overall']['currency_totals']));
+        $totals = collect($analytics['overall']['currency_totals'])->keyBy('currency');
+        $this->assertSame(100.0, $totals['USD']['gross_revenue']);
+        $this->assertSame(80.0, $totals['EUR']['gross_revenue']);
+        $this->assertSame(20.0, $totals['EUR']['refunded_amount']);
+        $this->assertSame(2, $analytics['overall']['paid_orders_count']);
+        $this->assertSame(1, $analytics['overall']['pending_orders_count']);
     }
 
     public function test_ticket_category_wise_breakdown_displays_tier_sales_and_revenue(): void

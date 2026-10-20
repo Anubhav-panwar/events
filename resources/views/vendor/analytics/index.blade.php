@@ -238,6 +238,7 @@
                                 class="w-full text-xs rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white">
                             <option value="all" {{ $filters['status'] === 'all' ? 'selected' : '' }}>{{ __('All Tickets & Orders') }}</option>
                             <option value="paid" {{ $filters['status'] === 'paid' ? 'selected' : '' }}>{{ __('Paid Tickets Only') }}</option>
+                            <option value="partially_refunded" {{ $filters['status'] === 'partially_refunded' ? 'selected' : '' }}>{{ __('Partially Refunded Orders') }}</option>
                             <option value="free" {{ $filters['status'] === 'free' ? 'selected' : '' }}>{{ __('Free Registrations Only') }}</option>
                             <option value="refunded" {{ $filters['status'] === 'refunded' ? 'selected' : '' }}>{{ __('Refunded Orders') }}</option>
                             <option value="cancelled" {{ $filters['status'] === 'cancelled' ? 'selected' : '' }}>{{ __('Cancelled Orders') }}</option>
@@ -285,6 +286,21 @@
         {{-- Executive KPI Financial & Ticket Performance Grid --}}
         <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
+            @if($overall['currency'] === 'MULTI')
+                <div class="col-span-full surface p-4 rounded-xl border border-amber-200 bg-amber-50">
+                    <p class="font-bold text-amber-900">{{ __('Revenue is shown separately by currency') }}</p>
+                    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                        @foreach($overall['currency_totals'] as $currencyTotal)
+                            <div class="rounded-lg bg-white p-3 border border-amber-100">
+                                <p class="font-bold text-slate-900">{{ $currencyTotal['currency'] }}</p>
+                                <p class="text-xs text-slate-600 mt-1">{{ __('Gross') }} {{ number_format($currencyTotal['gross_revenue'], 2) }} · {{ __('Refunds') }} {{ number_format($currencyTotal['refunded_amount'], 2) }}</p>
+                                <p class="text-sm font-semibold text-emerald-700">{{ __('Net') }} {{ number_format($currencyTotal['net_revenue'], 2) }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             {{-- KPI 1: Gross Ticket Revenue --}}
             <div class="surface p-5 rounded-2xl border-t-4 border-t-blue-500 hover:shadow-lg transition-all relative overflow-hidden group">
                 <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -293,8 +309,8 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                 </div>
-                <div class="mt-3 text-2xl font-black text-slate-950 tracking-tight" x-text="'$' + formatMoney(overall.gross_revenue)">
-                    ${{ number_format($overall['gross_revenue'], 2) }}
+                <div class="mt-3 text-2xl font-black text-slate-950 tracking-tight" x-text="overall.gross_revenue === null ? '{{ __('See currency breakdown') }}' : overall.currency + ' ' + formatMoney(overall.gross_revenue)">
+                    {{ $overall['currency'] }} {{ is_numeric($overall['gross_revenue']) ? number_format($overall['gross_revenue'], 2) : __('See breakdown') }}
                 </div>
                 <div class="mt-1.5 flex items-center justify-between text-[11px] text-slate-500">
                     <span>{{ __('Gross Sales') }}</span>
@@ -310,8 +326,8 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                 </div>
-                <div class="mt-3 text-2xl font-black text-emerald-700 tracking-tight" x-text="'$' + formatMoney(overall.net_revenue)">
-                    ${{ number_format($overall['net_revenue'], 2) }}
+                <div class="mt-3 text-2xl font-black text-emerald-700 tracking-tight" x-text="overall.net_revenue === null ? '{{ __('See currency breakdown') }}' : overall.currency + ' ' + formatMoney(overall.net_revenue)">
+                    {{ $overall['currency'] }} {{ is_numeric($overall['net_revenue']) ? number_format($overall['net_revenue'], 2) : __('See breakdown') }}
                 </div>
                 <div class="mt-1.5 flex items-center justify-between text-[11px] text-emerald-800 font-semibold">
                     <span>{{ __('Net Payout') }}</span>
@@ -682,7 +698,13 @@
 
                                     {{-- Gross Sales --}}
                                     <td class="py-4 pr-4 text-right whitespace-nowrap font-bold text-slate-900">
-                                        ${{ number_format($ev['gross_revenue'], 2) }}
+                                        @if(count($ev['currency_totals']) === 1)
+                                            {{ $ev['currency_totals'][0]['currency'] }} {{ number_format($ev['gross_revenue'], 2) }}
+                                        @elseif(count($ev['currency_totals']) > 1)
+                                            {{ __('See CSV currency breakdown') }}
+                                        @else
+                                            —
+                                        @endif
                                         <div class="text-[10px] text-slate-400 font-normal">
                                             {{ $ev['orders_count'] }} {{ __('orders') }}
                                         </div>
@@ -691,18 +713,28 @@
                                     {{-- Fees & Refunds --}}
                                     <td class="py-4 pr-4 text-right whitespace-nowrap text-xs text-slate-600">
                                         <div>
-                                            <span class="text-slate-400">{{ __('Fee') }}:</span> -${{ number_format($ev['platform_fees'], 2) }}
+                                            @if(count($ev['currency_totals']) === 1)
+                                                <span class="text-slate-400">{{ __('Fee') }}:</span> -{{ $ev['currency_totals'][0]['currency'] }} {{ number_format($ev['platform_fees'], 2) }}
+                                            @else
+                                                <span class="text-slate-400">{{ __('Fee') }}:</span> {{ __('See CSV currency breakdown') }}
+                                            @endif
                                         </div>
-                                        @if($ev['refunded_amount'] > 0)
+                                        @if(is_numeric($ev['refunded_amount']) && $ev['refunded_amount'] > 0)
                                             <div class="text-rose-600 font-semibold mt-0.5">
-                                                <span class="text-rose-400">{{ __('Ref') }}:</span> -${{ number_format($ev['refunded_amount'], 2) }}
+                                                <span class="text-rose-400">{{ __('Ref') }}:</span> -{{ $ev['currency_totals'][0]['currency'] }} {{ number_format($ev['refunded_amount'], 2) }}
                                             </div>
                                         @endif
                                     </td>
 
                                     {{-- Net Payout --}}
                                     <td class="py-4 pr-4 text-right whitespace-nowrap font-black text-emerald-700 text-sm">
-                                        ${{ number_format($ev['net_revenue'], 2) }}
+                                        @if(count($ev['currency_totals']) === 1)
+                                            {{ $ev['currency_totals'][0]['currency'] }} {{ number_format($ev['net_revenue'], 2) }}
+                                        @elseif(count($ev['currency_totals']) > 1)
+                                            {{ __('See CSV currency breakdown') }}
+                                        @else
+                                            —
+                                        @endif
                                     </td>
 
                                     {{-- Categories Toggle Action --}}
@@ -855,7 +887,7 @@
                                         </span>
                                     </td>
                                     <td class="py-3 pr-4 text-slate-700 whitespace-nowrap font-semibold">
-                                        ${{ number_format($cat['price'], 2) }}
+                                        {{ $cat['currency'] }} {{ number_format($cat['price'], 2) }}
                                     </td>
                                     <td class="py-3 pr-4 text-center text-slate-600">
                                         {{ $cat['allocated'] }}
@@ -868,13 +900,13 @@
                                         {{ $cat['available'] > 0 ? $cat['available'] : __('Sold Out') }}
                                     </td>
                                     <td class="py-3 pr-4 text-right font-bold text-slate-900 whitespace-nowrap">
-                                        ${{ number_format($cat['gross_revenue'], 2) }}
+                                        {{ $cat['currency'] }} {{ number_format($cat['gross_revenue'], 2) }}
                                     </td>
                                     <td class="py-3 pr-4 text-right text-slate-500 whitespace-nowrap">
-                                        -${{ number_format($cat['platform_fees'], 2) }}
+                                        -{{ $cat['currency'] }} {{ number_format($cat['platform_fees'], 2) }}
                                     </td>
                                     <td class="py-3 pr-4 text-right font-black text-emerald-700 whitespace-nowrap">
-                                        ${{ number_format($cat['net_revenue'], 2) }}
+                                        {{ $cat['currency'] }} {{ number_format($cat['net_revenue'], 2) }}
                                     </td>
                                     <td class="py-3 text-right font-mono font-medium text-slate-600">
                                         {{ $cat['occupancy_rate'] }}%
@@ -933,7 +965,9 @@
                         <tbody class="divide-y divide-slate-100">
                             @foreach($recent_orders as $order)
                                 @php
-                                    $net = $order->status === 'paid' ? max(0, (float)$order->total - (float)$order->refunded_amount - (float)$order->platform_fee) : 0.00;
+                                    $refund = (float) $order->refunded_amount > 0 ? (float) $order->refunded_amount : ($order->status === 'refunded' ? (float) $order->total : 0);
+                                    $fee = (float) $order->total > 0 ? (float) $order->platform_fee * max(0, ((float) $order->total - $refund) / (float) $order->total) : 0;
+                                    $net = in_array($order->status, ['paid', 'partially_refunded', 'refunded'], true) ? max(0, (float) $order->total - $refund - $fee) : 0.00;
                                 @endphp
                                 <tr class="hover:bg-slate-50/80 transition-colors"
                                     x-show="(!orderSearch || '{{ strtolower(addslashes('#' . str_pad($order->id, 5, '0', STR_PAD_LEFT) . ' ' . ($order->event?->title ?? '') . ' ' . ($order->user?->name ?? '') . ' ' . ($order->user?->email ?? '') . ' ' . ($order->items->first()?->ticketType?->name ?? ''))) }}'.includes(orderSearch.toLowerCase())) && (!filters.event_id || filters.event_id == '{{ $order->event_id }}')">
@@ -959,19 +993,21 @@
                                         <div class="text-[11px] text-slate-400 mt-0.5">{{ $order->user?->email }}</div>
                                     </td>
                                     <td class="py-3.5 pr-4 text-center font-bold text-xs text-slate-900">
-                                        {{ $order->items->sum('quantity') }}
+                                        {{ $order->items->sum(fn ($item) => max(0, (int) $item->quantity - ((int) $item->refunded_quantity ?: ($order->status === 'refunded' ? (int) $item->quantity : 0)))) }}
                                     </td>
                                     <td class="py-3.5 pr-4 text-right whitespace-nowrap text-xs font-bold text-slate-950">
-                                        ${{ number_format($order->total, 2) }}
+                                        {{ strtoupper($order->currency ?: 'USD') }} {{ number_format($order->total, 2) }}
                                     </td>
                                     <td class="py-3.5 pr-4 text-right whitespace-nowrap text-xs text-slate-500">
-                                        -${{ number_format($order->platform_fee, 2) }}
+                                        -{{ strtoupper($order->currency ?: 'USD') }} {{ number_format($order->platform_fee, 2) }}
                                     </td>
                                     <td class="py-3.5 pr-4 text-right whitespace-nowrap text-xs font-black text-emerald-700">
-                                        ${{ number_format($net, 2) }}
+                                        {{ strtoupper($order->currency ?: 'USD') }} {{ number_format($net, 2) }}
                                     </td>
                                     <td class="py-3.5 pr-4 whitespace-nowrap text-xs">
-                                        @if($order->status === 'paid')
+                                        @if($order->status === 'partially_refunded')
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">{{ __('Partially Refunded') }}</span>
+                                        @elseif($order->status === 'paid')
                                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {{ __('Paid') }}
                                             </span>

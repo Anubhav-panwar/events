@@ -64,13 +64,7 @@ class OrderController extends Controller
                         'order_item_id' => $item->id,
                         'code' => $code,
                         'attendee_name' => $user->name,
-                        'qr_data' => json_encode([
-                            'ticket_code' => $code,
-                            'order_id' => $order->id,
-                            'event_id' => $event->id,
-                            'tier' => $ticketType->name,
-                            'issued_at' => now()->toIso8601String(),
-                        ], JSON_UNESCAPED_SLASHES),
+                        'qr_data' => $code,
                         'issued_at' => now(),
                     ]);
                 }

@@ -108,23 +108,66 @@ class CheckoutService
         return $order->fresh('items.ticketType.event');
     }
 
-    public function refund(Order $order, ?float $amount = null): Order
+    public function refund(Order $order, ?float $amount = null, array $itemQuantities = []): Order
     {
-        if ($order->status === 'refunded') {
-            return $order;
-        }
+        return DB::transaction(function () use ($order, $amount, $itemQuantities) {
+            $order = Order::query()->lockForUpdate()->with('items')->findOrFail($order->id);
+            if (!in_array($order->status, ['paid', 'partially_refunded'], true)) {
+                return $order;
+            }
 
-        $refundAmount = $amount !== null ? min((float) $order->total, max(0.0, $amount)) : (float) $order->total;
+            $remaining = max(0.0, round((float) $order->total - (float) $order->refunded_amount, 2));
+            $refundAmount = $amount === null ? $remaining : round(max(0.0, $amount), 2);
+            if ($refundAmount <= 0 || $refundAmount > $remaining) {
+                throw ValidationException::withMessages(['refund' => __('Refund amount must be greater than zero and no more than the remaining paid amount.')]);
+            }
 
-        DB::transaction(function () use ($order, $refundAmount) {
+            $ticketRefundValue = 0.0;
+            foreach ($itemQuantities as $itemId => $quantity) {
+                $item = $order->items->firstWhere('id', (int) $itemId);
+                $quantity = (int) $quantity;
+                if (!$item || $quantity < 0 || $quantity > ((int) $item->quantity - (int) $item->refunded_quantity)) {
+                    throw ValidationException::withMessages(['refund' => __('Refunded ticket quantities must belong to this order and cannot exceed the remaining quantity.')]);
+                }
+                $ticketRefundValue += $quantity * (float) $item->unit_price;
+                $item->increment('refunded_quantity', $quantity);
+                if ($quantity > 0) {
+                    $item->ticketType()->decrement('sold', $quantity);
+                }
+                $item->tickets()
+                    ->whereNull('refunded_at')
+                    ->orderBy('id')
+                    ->limit($quantity)
+                    ->update(['refunded_at' => now()]);
+            }
+            if ($ticketRefundValue > $refundAmount) {
+                throw ValidationException::withMessages(['refund' => __('The refund amount cannot be lower than the face value of tickets being refunded.')]);
+            }
+
+            // A full monetary refund voids all remaining tickets. For a partial monetary
+            // refund, callers must identify ticket quantities explicitly; we never infer
+            // ticket voids from an amount alone.
+            $newRefundedAmount = round((float) $order->refunded_amount + $refundAmount, 2);
+            $isFullyRefunded = $newRefundedAmount >= (float) $order->total;
+            if ($isFullyRefunded) {
+                foreach ($order->items as $item) {
+                    $additionalRefunded = max(0, (int) $item->quantity - (int) $item->refunded_quantity);
+                    $item->update(['refunded_quantity' => (int) $item->quantity]);
+                    $item->tickets()->whereNull('refunded_at')->update(['refunded_at' => now()]);
+                    if ($additionalRefunded > 0) {
+                        $item->ticketType()->decrement('sold', $additionalRefunded);
+                    }
+                }
+            }
+
             $order->update([
-                'status' => 'refunded',
-                'refunded_amount' => $refundAmount,
+                'status' => $isFullyRefunded ? 'refunded' : 'partially_refunded',
+                'refunded_amount' => $newRefundedAmount,
                 'refunded_at' => now(),
             ]);
-        });
 
-        return $order->fresh('items.ticketType.event');
+            return $order->fresh('items.ticketType.event');
+        });
     }
 
     public function cancel(Order $order, ?string $failedReason = null): Order

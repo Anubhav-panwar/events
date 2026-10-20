@@ -63,13 +63,15 @@ class VendorAnalyticsService
 
         // Apply status filter if specified
         if ($statusFilter === 'paid') {
-            $ordersQuery->where('status', 'paid')->where('total', '>', 0);
+            $ordersQuery->whereIn('status', ['paid', 'partially_refunded'])->where('total', '>', 0);
+        } elseif ($statusFilter === 'partially_refunded') {
+            $ordersQuery->where('status', 'partially_refunded');
         } elseif ($statusFilter === 'free') {
             $ordersQuery->where('status', 'paid')->where(function ($q) {
                 $q->where('total', '<=', 0)->orWhere('payment_provider', 'free');
             });
         } elseif ($statusFilter === 'refunded') {
-            $ordersQuery->where('status', 'refunded');
+            $ordersQuery->whereIn('status', ['refunded', 'partially_refunded']);
         } elseif ($statusFilter === 'cancelled') {
             $ordersQuery->where('status', 'cancelled');
         }
@@ -89,8 +91,8 @@ class VendorAnalyticsService
         $trendData = $this->computeTrendData($filteredOrders, $startDate, $endDate);
 
         // Top event & category highlights
-        $topEvent = collect($eventSummaries)->sortByDesc('gross_revenue')->first();
-        $topCategory = collect($categoryBreakdown)->sortByDesc('gross_revenue')->first();
+        $topEvent = $overall['currency'] === 'MULTI' ? null : collect($eventSummaries)->sortByDesc('gross_revenue')->first();
+        $topCategory = $overall['currency'] === 'MULTI' ? null : collect($categoryBreakdown)->sortByDesc('gross_revenue')->first();
 
         // Event-wise chart data
         $eventChartData = [
@@ -130,7 +132,9 @@ class VendorAnalyticsService
         ];
 
         $formattedOrders = $filteredOrders->take(30)->map(function ($order) {
-            $net = $order->status === 'paid' ? max(0, (float)$order->total - (float)$order->refunded_amount - (float)$order->platform_fee) : 0.00;
+            $refund = (float) $order->refunded_amount > 0 ? (float) $order->refunded_amount : ($order->status === 'refunded' ? (float) $order->total : 0);
+            $fee = (float) $order->total > 0 ? (float) $order->platform_fee * max(0, ((float) $order->total - $refund) / (float) $order->total) : 0;
+            $net = in_array($order->status, ['paid', 'partially_refunded', 'refunded'], true) ? max(0, (float)$order->total - $refund - $fee) : 0.00;
             return [
                 'id' => $order->id,
                 'code' => '#' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
@@ -141,6 +145,9 @@ class VendorAnalyticsService
                 'attendee_email' => $order->user?->email ?? '',
                 'quantity' => (int) $order->items->sum('quantity'),
                 'gross' => (float) $order->total,
+                'currency' => strtoupper($order->currency ?: config('events.currency', 'USD')),
+                'refunded_amount' => $refund,
+                'refunded_quantity' => (int) $order->items->sum(fn ($item) => $this->refundedQuantity($order, $item)),
                 'gross_formatted' => '$' . number_format((float) $order->total, 2),
                 'fee' => (float) $order->platform_fee,
                 'fee_formatted' => '-$' . number_format((float) $order->platform_fee, 2),
@@ -182,16 +189,35 @@ class VendorAnalyticsService
      */
     private function computeOverallMetrics(Collection $orders, Collection $events): array
     {
-        $paidOrders = $orders->filter(fn ($o) => $o->status === 'paid');
-        $refundedOrders = $orders->filter(fn ($o) => $o->status === 'refunded');
+        $paidOrders = $orders->filter(fn ($o) => in_array($o->status, ['paid', 'partially_refunded'], true));
+        $refundedOrders = $orders->filter(fn ($o) => in_array($o->status, ['refunded', 'partially_refunded'], true));
         $cancelledOrders = $orders->filter(fn ($o) => $o->status === 'cancelled');
 
-        $grossRevenue = (float) $paidOrders->sum('total');
-        $refundedAmount = (float) $refundedOrders->sum(fn ($o) => (float) ($o->refunded_amount > 0 ? $o->refunded_amount : $o->total));
-        $platformFees = (float) $paidOrders->sum('platform_fee');
-
-        // Net revenue accounts for refunds, cancellations, and platform fees
-        $netRevenue = max(0.0, round($grossRevenue - $refundedAmount - $platformFees, 2));
+        $currencyTotals = [];
+        foreach ($orders->groupBy(fn ($o) => strtoupper($o->currency ?: config('events.currency', 'USD'))) as $currency => $currencyOrders) {
+            $moneyOrders = $currencyOrders->filter(fn ($o) => in_array($o->status, ['paid', 'partially_refunded', 'refunded'], true) && (float) $o->total > 0);
+            if ($moneyOrders->isEmpty()) {
+                continue;
+            }
+            $gross = (float) $moneyOrders->sum('total');
+            $refunds = (float) $moneyOrders->sum(fn ($o) => (float) $o->refunded_amount > 0 ? (float) $o->refunded_amount : ($o->status === 'refunded' ? (float) $o->total : 0));
+            $fees = (float) $moneyOrders->sum(function ($o) {
+                $refunded = (float) $o->refunded_amount > 0 ? (float) $o->refunded_amount : ($o->status === 'refunded' ? (float) $o->total : 0);
+                return (float) $o->total > 0 ? round((float) $o->platform_fee * max(0, ((float) $o->total - $refunded) / (float) $o->total), 2) : 0;
+            });
+            $currencyTotals[] = [
+                'currency' => $currency,
+                'gross_revenue' => $gross,
+                'refunded_amount' => $refunds,
+                'platform_fees' => $fees,
+                'net_revenue' => max(0.0, round($gross - $refunds - $fees, 2)),
+            ];
+        }
+        $singleCurrency = count($currencyTotals) <= 1;
+        $grossRevenue = $singleCurrency ? (float) ($currencyTotals[0]['gross_revenue'] ?? 0) : null;
+        $refundedAmount = $singleCurrency ? (float) ($currencyTotals[0]['refunded_amount'] ?? 0) : null;
+        $platformFees = $singleCurrency ? (float) ($currencyTotals[0]['platform_fees'] ?? 0) : null;
+        $netRevenue = $singleCurrency ? (float) ($currencyTotals[0]['net_revenue'] ?? 0) : null;
 
         $paidTicketsCount = 0;
         $freeTicketsCount = 0;
@@ -199,16 +225,17 @@ class VendorAnalyticsService
         $cancelledTicketsCount = 0;
 
         foreach ($orders as $order) {
-            $orderQty = (int) $order->items->sum('quantity');
+            $orderQty = (int) $order->items->sum(fn ($item) => max(0, (int) $item->quantity - $this->refundedQuantity($order, $item)));
+            $refundedTicketsCount += (int) $order->items->sum(fn ($item) => $this->refundedQuantity($order, $item));
 
-            if ($order->status === 'paid') {
+            if (in_array($order->status, ['paid', 'partially_refunded'], true)) {
                 if ((float) $order->total > 0 && $order->payment_provider !== 'free') {
                     $paidTicketsCount += $orderQty;
                 } else {
                     $freeTicketsCount += $orderQty;
                 }
             } elseif ($order->status === 'refunded') {
-                $refundedTicketsCount += $orderQty;
+                // Fully refunded quantities are counted above and excluded from active sales.
             } elseif ($order->status === 'cancelled') {
                 $cancelledTicketsCount += $orderQty;
             }
@@ -226,8 +253,8 @@ class VendorAnalyticsService
         $availableTickets = max(0, $totalCapacity - $totalTicketsSold);
         $occupancyRate = $totalCapacity > 0 ? round(($totalTicketsSold / $totalCapacity) * 100, 1) : 0.0;
 
-        $paidOrdersWithMoney = $paidOrders->filter(fn ($o) => (float) $o->total > 0)->count();
-        $averageOrderValue = $paidOrdersWithMoney > 0 ? round($grossRevenue / $paidOrdersWithMoney, 2) : 0.0;
+        $paidOrdersWithMoney = $orders->filter(fn ($o) => in_array($o->status, ['paid', 'partially_refunded', 'refunded'], true) && (float) $o->total > 0)->count();
+        $averageOrderValue = $grossRevenue !== null && $paidOrdersWithMoney > 0 ? round($grossRevenue / $paidOrdersWithMoney, 2) : null;
 
         return [
             'gross_revenue' => $grossRevenue,
@@ -236,7 +263,7 @@ class VendorAnalyticsService
             'net_revenue' => $netRevenue,
             'total_orders' => $orders->count(),
             'paid_orders_count' => $paidOrders->count(),
-            'free_orders_count' => $orders->filter(fn ($o) => $o->status === 'paid' && ((float) $o->total <= 0 || $o->payment_provider === 'free'))->count(),
+            'free_orders_count' => $orders->filter(fn ($o) => in_array($o->status, ['paid', 'partially_refunded'], true) && ((float) $o->total <= 0 || $o->payment_provider === 'free'))->count(),
             'refunded_orders_count' => $refundedOrders->count(),
             'cancelled_orders_count' => $cancelledOrders->count(),
             'paid_tickets_count' => $paidTicketsCount,
@@ -248,9 +275,22 @@ class VendorAnalyticsService
             'available_tickets_count' => $availableTickets,
             'occupancy_rate' => $occupancyRate,
             'average_order_value' => $averageOrderValue,
-            'currency' => config('events.currency', 'USD'),
+            'currency' => count($currencyTotals) === 1 ? $currencyTotals[0]['currency'] : (count($currencyTotals) ? 'MULTI' : config('events.currency', 'USD')),
+            'currency_totals' => $currencyTotals,
+            'partially_refunded_orders_count' => $orders->where('status', 'partially_refunded')->count(),
+            'pending_orders_count' => $orders->where('status', 'pending')->count(),
             'platform_fee_percent' => config('events.platform_fee_percentage', 5.0),
         ];
+    }
+
+    private function refundedQuantity(Order $order, OrderItem $item): int
+    {
+        if ((int) $item->refunded_quantity > 0) {
+            return min((int) $item->quantity, (int) $item->refunded_quantity);
+        }
+
+        // Legacy fully refunded orders predate per-item refund tracking.
+        return $order->status === 'refunded' ? (int) $item->quantity : 0;
     }
 
     /**
@@ -263,14 +303,25 @@ class VendorAnalyticsService
         foreach ($events as $event) {
             $eventOrders = $allFilteredOrders->filter(fn ($o) => (int) $o->event_id === (int) $event->id);
 
-            $paidOrders = $eventOrders->filter(fn ($o) => $o->status === 'paid');
-            $refundedOrders = $eventOrders->filter(fn ($o) => $o->status === 'refunded');
+            $paidOrders = $eventOrders->filter(fn ($o) => in_array($o->status, ['paid', 'partially_refunded'], true));
+            $refundedOrders = $eventOrders->filter(fn ($o) => in_array($o->status, ['refunded', 'partially_refunded'], true));
             $cancelledOrders = $eventOrders->filter(fn ($o) => $o->status === 'cancelled');
 
-            $grossRevenue = (float) $paidOrders->sum('total');
-            $refundedAmount = (float) $refundedOrders->sum(fn ($o) => (float) ($o->refunded_amount > 0 ? $o->refunded_amount : $o->total));
-            $platformFees = (float) $paidOrders->sum('platform_fee');
-            $netRevenue = max(0.0, round($grossRevenue - $refundedAmount - $platformFees, 2));
+            $successfulMoneyOrders = $eventOrders->filter(fn ($o) => in_array($o->status, ['paid', 'partially_refunded', 'refunded'], true) && (float) $o->total > 0);
+            $currencies = $successfulMoneyOrders->groupBy(fn ($o) => strtoupper($o->currency ?: config('events.currency', 'USD')));
+            $currencyTotals = $currencies->map(function ($currencyOrders, $currency) {
+                $gross = (float) $currencyOrders->sum('total');
+                $refunds = (float) $currencyOrders->sum(fn ($o) => (float) $o->refunded_amount > 0 ? (float) $o->refunded_amount : ($o->status === 'refunded' ? (float) $o->total : 0));
+                $fees = (float) $currencyOrders->sum(function ($o) {
+                    $refund = (float) $o->refunded_amount > 0 ? (float) $o->refunded_amount : ($o->status === 'refunded' ? (float) $o->total : 0);
+                    return (float) $o->total > 0 ? round((float) $o->platform_fee * max(0, ((float) $o->total - $refund) / (float) $o->total), 2) : 0;
+                });
+                return ['currency' => $currency, 'gross_revenue' => $gross, 'refunded_amount' => $refunds, 'platform_fees' => $fees, 'net_revenue' => max(0, round($gross - $refunds - $fees, 2))];
+            })->values()->all();
+            $grossRevenue = count($currencyTotals) <= 1 ? (float) ($currencyTotals[0]['gross_revenue'] ?? 0) : null;
+            $refundedAmount = count($currencyTotals) <= 1 ? (float) ($currencyTotals[0]['refunded_amount'] ?? 0) : null;
+            $platformFees = count($currencyTotals) <= 1 ? (float) ($currencyTotals[0]['platform_fees'] ?? 0) : null;
+            $netRevenue = count($currencyTotals) <= 1 ? max(0.0, round($grossRevenue - $refundedAmount - $platformFees, 2)) : null;
 
             $paidTickets = 0;
             $freeTickets = 0;
@@ -278,15 +329,16 @@ class VendorAnalyticsService
             $cancelledTickets = 0;
 
             foreach ($eventOrders as $order) {
-                $qty = (int) $order->items->sum('quantity');
-                if ($order->status === 'paid') {
+                $qty = (int) $order->items->sum(fn ($item) => max(0, (int) $item->quantity - $this->refundedQuantity($order, $item)));
+                $refundedTickets += (int) $order->items->sum(fn ($item) => $this->refundedQuantity($order, $item));
+                if (in_array($order->status, ['paid', 'partially_refunded'], true)) {
                     if ((float) $order->total > 0 && $order->payment_provider !== 'free') {
                         $paidTickets += $qty;
                     } else {
                         $freeTickets += $qty;
                     }
                 } elseif ($order->status === 'refunded') {
-                    $refundedTickets += $qty;
+                    // Fully refunded quantities are excluded from active sales.
                 } elseif ($order->status === 'cancelled') {
                     $cancelledTickets += $qty;
                 }
@@ -308,22 +360,34 @@ class VendorAnalyticsService
                 $typeRefundedTickets = 0;
                 $typeCancelledTickets = 0;
                 $typeGross = 0.0;
+                $typeRefundedAmount = 0.0;
+                $typeFees = 0.0;
 
                 foreach ($eventOrders as $order) {
                     $matchItems = $order->items->filter(fn ($it) => (int) $it->ticket_type_id === (int) $ticketType->id);
                     foreach ($matchItems as $item) {
                         $itemQty = (int) $item->quantity;
+                        $refundedQty = $this->refundedQuantity($order, $item);
+                        $activeQty = max(0, $itemQty - $refundedQty);
                         $itemRevenue = $itemQty * (float) $item->unit_price;
+                        if ((float) $order->total > 0) {
+                            $orderRefund = (float) $order->refunded_amount > 0 ? (float) $order->refunded_amount : ($order->status === 'refunded' ? (float) $order->total : 0);
+                            $share = $itemRevenue / (float) $order->total;
+                            $typeRefundedAmount += $orderRefund * $share;
+                            $typeFees += (float) $order->platform_fee * $share * max(0, ((float) $order->total - $orderRefund) / (float) $order->total);
+                        }
 
-                        if ($order->status === 'paid') {
+                        if (in_array($order->status, ['paid', 'partially_refunded', 'refunded'], true)) {
                             if ((float) $item->unit_price > 0 && $order->payment_provider !== 'free') {
-                                $typePaidTickets += $itemQty;
+                                $typePaidTickets += in_array($order->status, ['paid', 'partially_refunded'], true) ? $activeQty : 0;
+                                $typeRefundedTickets += $refundedQty;
                                 $typeGross += $itemRevenue;
                             } else {
-                                $typeFreeTickets += $itemQty;
+                                $typeFreeTickets += in_array($order->status, ['paid', 'partially_refunded'], true) ? $activeQty : 0;
+                                $typeRefundedTickets += $refundedQty;
                             }
                         } elseif ($order->status === 'refunded') {
-                            $typeRefundedTickets += $itemQty;
+                            $typeRefundedTickets += $refundedQty;
                         } elseif ($order->status === 'cancelled') {
                             $typeCancelledTickets += $itemQty;
                         }
@@ -332,9 +396,8 @@ class VendorAnalyticsService
 
                 $typeTotalSold = $typePaidTickets + $typeFreeTickets;
                 $typeAvailable = max(0, $typeAllocated - $typeTotalSold);
-                $feeRate = (float) config('events.platform_fee_percentage', 5.0) / 100;
-                $typeFees = round($typeGross * $feeRate, 2);
-                $typeNet = max(0.0, round($typeGross - $typeFees, 2));
+                $typeFees = round($typeFees, 2);
+                $typeNet = max(0.0, round($typeGross - $typeRefundedAmount - $typeFees, 2));
                 $typeOccupancy = $typeAllocated > 0 ? round(($typeTotalSold / $typeAllocated) * 100, 1) : 0.0;
 
                 $categoryBreakdown[] = [
@@ -350,6 +413,7 @@ class VendorAnalyticsService
                     'refunded_tickets' => $typeRefundedTickets,
                     'cancelled_tickets' => $typeCancelledTickets,
                     'gross_revenue' => $typeGross,
+                    'refunded_amount' => round($typeRefundedAmount, 2),
                     'platform_fees' => $typeFees,
                     'net_revenue' => $typeNet,
                     'occupancy_rate' => $typeOccupancy,
@@ -379,6 +443,7 @@ class VendorAnalyticsService
                 'refunded_amount' => $refundedAmount,
                 'platform_fees' => $platformFees,
                 'net_revenue' => $netRevenue,
+                'currency_totals' => $currencyTotals,
                 'orders_count' => $eventOrders->count(),
                 'categories' => $categoryBreakdown,
             ];
@@ -404,22 +469,34 @@ class VendorAnalyticsService
                 $typeRefundedTickets = 0;
                 $typeCancelledTickets = 0;
                 $typeGross = 0.0;
+                $typeRefundedAmount = 0.0;
+                $typeFees = 0.0;
 
                 foreach ($eventOrders as $order) {
                     $matchItems = $order->items->filter(fn ($it) => (int) $it->ticket_type_id === (int) $ticketType->id);
                     foreach ($matchItems as $item) {
                         $itemQty = (int) $item->quantity;
+                        $refundedQty = $this->refundedQuantity($order, $item);
+                        $activeQty = max(0, $itemQty - $refundedQty);
                         $itemRevenue = $itemQty * (float) $item->unit_price;
+                        if ((float) $order->total > 0) {
+                            $orderRefund = (float) $order->refunded_amount > 0 ? (float) $order->refunded_amount : ($order->status === 'refunded' ? (float) $order->total : 0);
+                            $share = $itemRevenue / (float) $order->total;
+                            $typeRefundedAmount += $orderRefund * $share;
+                            $typeFees += (float) $order->platform_fee * $share * max(0, ((float) $order->total - $orderRefund) / (float) $order->total);
+                        }
 
-                        if ($order->status === 'paid') {
+                        if (in_array($order->status, ['paid', 'partially_refunded', 'refunded'], true)) {
                             if ((float) $item->unit_price > 0 && $order->payment_provider !== 'free') {
-                                $typePaidTickets += $itemQty;
+                                $typePaidTickets += in_array($order->status, ['paid', 'partially_refunded'], true) ? $activeQty : 0;
+                                $typeRefundedTickets += $refundedQty;
                                 $typeGross += $itemRevenue;
                             } else {
-                                $typeFreeTickets += $itemQty;
+                                $typeFreeTickets += in_array($order->status, ['paid', 'partially_refunded'], true) ? $activeQty : 0;
+                                $typeRefundedTickets += $refundedQty;
                             }
                         } elseif ($order->status === 'refunded') {
-                            $typeRefundedTickets += $itemQty;
+                            $typeRefundedTickets += $refundedQty;
                         } elseif ($order->status === 'cancelled') {
                             $typeCancelledTickets += $itemQty;
                         }
@@ -428,9 +505,8 @@ class VendorAnalyticsService
 
                 $typeTotalSold = $typePaidTickets + $typeFreeTickets;
                 $typeAvailable = max(0, $typeAllocated - $typeTotalSold);
-                $feeRate = (float) config('events.platform_fee_percentage', 5.0) / 100;
-                $typeFees = round($typeGross * $feeRate, 2);
-                $typeNet = max(0.0, round($typeGross - $typeFees, 2));
+                $typeFees = round($typeFees, 2);
+                $typeNet = max(0.0, round($typeGross - $typeRefundedAmount - $typeFees, 2));
                 $typeOccupancy = $typeAllocated > 0 ? round(($typeTotalSold / $typeAllocated) * 100, 1) : 0.0;
 
                 $breakdown[] = [
@@ -448,6 +524,7 @@ class VendorAnalyticsService
                     'refunded_tickets' => $typeRefundedTickets,
                     'cancelled_tickets' => $typeCancelledTickets,
                     'gross_revenue' => $typeGross,
+                    'refunded_amount' => round($typeRefundedAmount, 2),
                     'platform_fees' => $typeFees,
                     'net_revenue' => $typeNet,
                     'occupancy_rate' => $typeOccupancy,
@@ -483,22 +560,33 @@ class VendorAnalyticsService
                 $d = $o->paid_at ?: $o->created_at ?: $o->reserved_at;
                 return $d && $d->format('Y-m-d') === $dayKey;
             });
-            $dayPaid = $dayOrders->filter(fn ($o) => $o->status === 'paid');
-
-            $dayGross = (float) $dayPaid->sum('total');
-            $dayFees = (float) $dayPaid->sum('platform_fee');
-            $dayRefunded = (float) $dayOrders->filter(fn ($o) => $o->status === 'refunded')->sum(fn ($o) => (float) ($o->refunded_amount > 0 ? $o->refunded_amount : $o->total));
-            $dayNet = max(0.0, round($dayGross - $dayFees - $dayRefunded, 2));
+            $dayPaid = $dayOrders->filter(fn ($o) => in_array($o->status, ['paid', 'partially_refunded', 'refunded'], true));
+            $dayCurrencies = $dayPaid->groupBy(fn ($o) => strtoupper($o->currency ?: config('events.currency', 'USD')));
+            $revenueByCurrency = [];
+            foreach ($dayCurrencies as $currency => $currencyOrders) {
+                $gross = (float) $currencyOrders->sum('total');
+                $refunds = (float) $currencyOrders->sum(fn ($o) => (float) $o->refunded_amount > 0 ? (float) $o->refunded_amount : ($o->status === 'refunded' ? (float) $o->total : 0));
+                $fees = (float) $currencyOrders->sum(function ($o) {
+                    $refund = (float) $o->refunded_amount > 0 ? (float) $o->refunded_amount : ($o->status === 'refunded' ? (float) $o->total : 0);
+                    return (float) $o->total > 0 ? (float) $o->platform_fee * max(0, ((float) $o->total - $refund) / (float) $o->total) : 0;
+                });
+                $revenueByCurrency[] = ['currency' => $currency, 'gross_revenue' => $gross, 'refunded_amount' => $refunds, 'platform_fees' => $fees, 'net_revenue' => max(0, round($gross - $refunds - $fees, 2))];
+            }
+            $dayGross = count($revenueByCurrency) <= 1 ? (float) ($revenueByCurrency[0]['gross_revenue'] ?? 0) : null;
+            $dayRefunded = count($revenueByCurrency) <= 1 ? (float) ($revenueByCurrency[0]['refunded_amount'] ?? 0) : null;
+            $dayFees = count($revenueByCurrency) <= 1 ? (float) ($revenueByCurrency[0]['platform_fees'] ?? 0) : null;
+            $dayNet = count($revenueByCurrency) <= 1 ? (float) ($revenueByCurrency[0]['net_revenue'] ?? 0) : null;
 
             $dayTickets = 0;
             foreach ($dayPaid as $order) {
-                $dayTickets += (int) $order->items->sum('quantity');
+                $dayTickets += (int) $order->items->sum(fn ($item) => max(0, (int) $item->quantity - $this->refundedQuantity($order, $item)));
             }
 
             $trend[] = [
                 'date' => $dayKey,
                 'label' => $dayLabel,
                 'gross_revenue' => $dayGross,
+                'revenue_by_currency' => $revenueByCurrency,
                 'net_revenue' => $dayNet,
                 'tickets_sold' => $dayTickets,
                 'orders_count' => $dayOrders->count(),
@@ -543,15 +631,21 @@ class VendorAnalyticsService
                 'Total Tickets Sold',
                 'Available Tickets',
                 'Occupancy Rate (%)',
-                "Gross Revenue ({$currency})",
-                "Refunded Amount ({$currency})",
-                "Platform Fees ({$currency})",
-                "Net Vendor Revenue ({$currency})",
+                'Currency',
+                'Gross Revenue',
+                'Refunded Amount',
+                'Platform Fees',
+                'Net Vendor Revenue',
                 'Total Orders',
             ]);
 
             foreach ($summaries as $s) {
-                fputcsv($handle, [
+                $currencyRows = $s['currency_totals'] ?: [[
+                    'currency' => strtoupper(config('events.currency', 'USD')),
+                    'gross_revenue' => 0, 'refunded_amount' => 0, 'platform_fees' => 0, 'net_revenue' => 0,
+                ]];
+                foreach ($currencyRows as $money) {
+                    fputcsv($handle, [
                     $s['event_id'],
                     $s['title'],
                     $s['event_date'],
@@ -562,12 +656,14 @@ class VendorAnalyticsService
                     $s['total_sold'],
                     $s['available_tickets'],
                     $s['occupancy_rate'] . '%',
-                    number_format($s['gross_revenue'], 2, '.', ''),
-                    number_format($s['refunded_amount'], 2, '.', ''),
-                    number_format($s['platform_fees'], 2, '.', ''),
-                    number_format($s['net_revenue'], 2, '.', ''),
+                    $money['currency'],
+                    number_format($money['gross_revenue'], 2, '.', ''),
+                    number_format($money['refunded_amount'], 2, '.', ''),
+                    number_format($money['platform_fees'], 2, '.', ''),
+                    number_format($money['net_revenue'], 2, '.', ''),
                     $s['orders_count'],
-                ]);
+                    ]);
+                }
             }
 
             fclose($handle);
@@ -604,9 +700,11 @@ class VendorAnalyticsService
                 'Buyer Name',
                 'Buyer Email',
                 'Quantity',
-                "Total Amount ({$currency})",
-                "Platform Fee ({$currency})",
-                "Net Vendor Payout ({$currency})",
+                'Currency',
+                'Total Amount',
+                'Refunded Amount',
+                'Platform Fee',
+                'Net Vendor Payout',
                 'Status',
                 'Payment Provider',
             ]);
@@ -614,7 +712,9 @@ class VendorAnalyticsService
             foreach ($orders as $order) {
                 $categoryName = $order->items->map(fn ($it) => $it->ticketType?->name ?? 'General Admission')->implode(', ');
                 $totalQty = $order->items->sum('quantity');
-                $net = $order->status === 'paid' ? max(0, (float) $order->total - (float) $order->refunded_amount - (float) $order->platform_fee) : 0.00;
+                $refund = (float) $order->refunded_amount > 0 ? (float) $order->refunded_amount : ($order->status === 'refunded' ? (float) $order->total : 0);
+                $fee = (float) $order->total > 0 ? (float) $order->platform_fee * max(0, ((float) $order->total - $refund) / (float) $order->total) : 0;
+                $net = in_array($order->status, ['paid', 'partially_refunded', 'refunded'], true) ? max(0, (float) $order->total - $refund - $fee) : 0.00;
 
                 fputcsv($handle, [
                     '#' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
@@ -624,7 +724,9 @@ class VendorAnalyticsService
                     $order->user?->name ?? 'Guest Buyer',
                     $order->user?->email ?? '',
                     $totalQty,
+                    strtoupper($order->currency ?: config('events.currency', 'USD')),
                     number_format($order->total, 2, '.', ''),
+                    number_format((float) $order->refunded_amount, 2, '.', ''),
                     number_format($order->platform_fee, 2, '.', ''),
                     number_format($net, 2, '.', ''),
                     ucfirst($order->status),
@@ -661,24 +763,27 @@ class VendorAnalyticsService
             fputcsv($handle, [
                 'Event Title',
                 'Category / Tier Name',
-                "Unit Price ({$currency})",
+                    'Currency',
+                    'Unit Price',
                 'Allocated Capacity',
                 'Paid Tickets Sold',
                 'Free Tickets Sold',
                 'Total Tickets Sold',
                 'Available Remaining',
                 'Refunded Tickets',
+                'Refunded Amount',
                 'Cancelled Tickets',
                 'Occupancy Rate (%)',
-                "Gross Sales ({$currency})",
-                "Platform Fees ({$currency})",
-                "Net Revenue ({$currency})",
+                    'Gross Sales',
+                    'Platform Fees',
+                    'Net Revenue',
             ]);
 
             foreach ($categories as $cat) {
                 fputcsv($handle, [
                     $cat['event_title'],
                     $cat['category_name'],
+                    $cat['currency'],
                     number_format($cat['price'], 2, '.', ''),
                     $cat['allocated'],
                     $cat['paid_tickets'],
@@ -686,6 +791,7 @@ class VendorAnalyticsService
                     $cat['total_sold'],
                     $cat['available'],
                     $cat['refunded_tickets'],
+                    number_format($cat['refunded_amount'], 2, '.', ''),
                     $cat['cancelled_tickets'],
                     $cat['occupancy_rate'] . '%',
                     number_format($cat['gross_revenue'], 2, '.', ''),

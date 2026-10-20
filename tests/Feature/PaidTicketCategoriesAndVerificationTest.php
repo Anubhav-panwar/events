@@ -263,6 +263,7 @@ class PaidTicketCategoriesAndVerificationTest extends TestCase
         $order = $checkoutService->markPaid($order, 'pi_confirmed_999');
 
         $ticket = Ticket::query()->whereHas('orderItem', fn($q) => $q->where('order_id', $order->id))->firstOrFail();
+        $this->assertSame($ticket->code, $ticket->qr_data);
 
         // 1. Booking confirmation page (checkout.success)
         $confirmationResponse = $this->actingAs($this->customerUser)
@@ -384,5 +385,28 @@ class PaidTicketCategoriesAndVerificationTest extends TestCase
 
         $response->assertSessionHasErrors('code');
         $this->assertNull($ticket->fresh()->checked_in_at);
+    }
+
+    public function test_atomic_checkin_claim_only_succeeds_for_one_scan(): void
+    {
+        $ticketType = TicketType::create([
+            'event_id' => $this->event->id, 'name' => 'Atomic', 'price' => 1, 'quantity' => 2, 'sold' => 1,
+        ]);
+        $order = Order::create([
+            'user_id' => $this->customerUser->id, 'vendor_profile_id' => $this->vendorProfile->id,
+            'event_id' => $this->event->id, 'total' => 1, 'currency' => 'USD', 'status' => 'paid', 'paid_at' => now(),
+        ]);
+        $item = OrderItem::create(['order_id' => $order->id, 'ticket_type_id' => $ticketType->id, 'quantity' => 1, 'unit_price' => 1]);
+        $ticket = Ticket::create([
+            'order_item_id' => $item->id,
+            'code' => 'ATOMIC-CHECKIN-TEST',
+            'issued_at' => now(),
+        ]);
+
+        $first = Ticket::query()->whereKey($ticket->id)->whereNull('checked_in_at')->whereNull('refunded_at')->update(['checked_in_at' => now()]);
+        $second = Ticket::query()->whereKey($ticket->id)->whereNull('checked_in_at')->whereNull('refunded_at')->update(['checked_in_at' => now()]);
+
+        $this->assertSame(1, $first);
+        $this->assertSame(0, $second);
     }
 }

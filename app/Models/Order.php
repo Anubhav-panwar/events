@@ -67,7 +67,7 @@ class Order extends Model
 
     public function getGrossRevenueAttribute(): float
     {
-        if ($this->status === 'paid') {
+        if (in_array($this->status, ['paid', 'partially_refunded', 'refunded'], true) && (float) $this->total > 0) {
             return (float) $this->total;
         }
 
@@ -76,10 +76,10 @@ class Order extends Model
 
     public function getNetRevenueAttribute(): float
     {
-        if ($this->status === 'paid') {
+        if (in_array($this->status, ['paid', 'partially_refunded', 'refunded'], true) && (float) $this->total > 0) {
             $gross = (float) $this->total;
-            $refunded = (float) $this->refunded_amount;
-            $fee = (float) $this->platform_fee;
+            $refunded = (float) $this->refunded_amount > 0 ? (float) $this->refunded_amount : ($this->status === 'refunded' ? $gross : 0);
+            $fee = $gross > 0 ? (float) $this->platform_fee * max(0, ($gross - $refunded) / $gross) : 0;
 
             return max(0.0, round($gross - $refunded - $fee, 2));
         }
@@ -94,12 +94,12 @@ class Order extends Model
 
     public function scopePaid($query)
     {
-        return $query->where('status', 'paid');
+        return $query->whereIn('status', ['paid', 'partially_refunded']);
     }
 
     public function scopeFree($query)
     {
-        return $query->where('status', 'paid')
+        return $query->whereIn('status', ['paid', 'partially_refunded'])
             ->where(function ($q) {
                 $q->where('total', '<=', 0)
                     ->orWhere('payment_provider', 'free');

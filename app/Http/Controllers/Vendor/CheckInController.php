@@ -73,7 +73,7 @@ class CheckInController extends Controller
         ];
 
         // 1. Payment Verification Check - ticket codes are valid only after payment confirmation
-        if (!$order || $order->status !== 'paid') {
+        if (!$order || !in_array($order->status, ['paid', 'partially_refunded'], true) || $ticket->refunded_at) {
             $statusMsg = "Ticket invalid. Order status is " . ($order ? strtoupper($order->status) : 'UNKNOWN') . ". Payment confirmation required.";
             if ($request->wantsJson()) {
                 return response()->json([
@@ -138,7 +138,31 @@ class CheckInController extends Controller
 
         // 4. Check-in & Admit
         $now = now();
-        $ticket->update(['checked_in_at' => $now]);
+        $claimed = Ticket::query()
+            ->whereKey($ticket->id)
+            ->whereNull('checked_in_at')
+            ->whereNull('refunded_at')
+            ->update(['checked_in_at' => $now]);
+        if ($claimed !== 1) {
+            $ticket->refresh();
+            $usedTime = $ticket->checked_in_at?->format('M d, Y \\a\\t h:i A') ?? 'another scan';
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'valid' => false,
+                    'status' => $ticket->refunded_at ? 'refunded' : 'already_used',
+                    'message' => $ticket->refunded_at ? 'Ticket has been refunded.' : "Ticket already used on {$usedTime}. Cannot reuse ticket.",
+                    'details' => $details,
+                ], 409);
+            }
+            return back()->withErrors(['code' => $ticket->refunded_at ? 'Ticket has been refunded' : 'Ticket already checked in'])
+                ->with('scanned_result', [
+                    'valid' => false,
+                    'type' => $ticket->refunded_at ? 'refunded' : 'already_used',
+                    'title' => $ticket->refunded_at ? 'Ticket Refunded' : 'Ticket Already Used',
+                    'message' => $ticket->refunded_at ? 'Ticket has been refunded.' : "Ticket already used on {$usedTime}. Cannot reuse ticket.",
+                    'details' => $details,
+                ]);
+        }
         $details['checked_in_at'] = $now->format('M d, Y h:i A');
 
         $statusMsg = 'Ticket valid. Checked in.';

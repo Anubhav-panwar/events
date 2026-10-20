@@ -80,11 +80,15 @@
                         {{ __('Confirmed date announcement email was dispatched to subscribers on :date.', ['date' => $event->dates_announced_at->format('M d, Y H:i')]) }}
                     </p>
                     @php
-                        $notifiedCount = $event->reminders()->where('notification_status', \App\Models\EventReminder::STATUS_NOTIFIED)->count();
+                        $notifiedCount = $event->reminders()->whereIn('notification_status', [\App\Models\EventReminder::STATUS_NOTIFIED, 'sent'])->count();
                         $failedCount = $event->reminders()->where('notification_status', \App\Models\EventReminder::STATUS_FAILED)->count();
+                        $queuedCount = $event->reminders()->whereIn('notification_status', [\App\Models\EventReminder::STATUS_QUEUED, \App\Models\EventReminder::STATUS_ATTEMPTED])->count();
                     @endphp
                     <div class="mt-2 flex items-center gap-3">
-                        <span class="font-semibold text-emerald-800">{{ $notifiedCount }} {{ __('subscribers successfully notified') }}</span>
+                        <span class="font-semibold text-emerald-800">{{ $notifiedCount }} {{ __('messages accepted by mail transport') }}</span>
+                        @if($queuedCount > 0)
+                            <span class="font-semibold text-blue-700">{{ $queuedCount }} {{ __('queued or attempting') }}</span>
+                        @endif
                         @if($failedCount > 0)
                             <span class="font-bold text-red-600">{{ $failedCount }} {{ __('failed deliveries') }}</span>
                             <form method="POST" action="{{ route('vendor.events.reminders.retry', $event) }}" class="inline">

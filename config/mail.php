@@ -39,7 +39,9 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => env('MAIL_SCHEME'),
+            // Use implicit TLS for the common cPanel SMTP port. Port 587 remains
+            // SMTP with STARTTLS negotiation; certificate verification stays enabled.
+            'scheme' => env('MAIL_SCHEME') ?: ((int) env('MAIL_PORT', 2525) === 465 ? 'smtps' : null),
             'url' => env('MAIL_URL'),
             'host' => env('MAIL_HOST', '127.0.0.1'),
             'port' => env('MAIL_PORT', 2525),

@@ -16,11 +16,13 @@ class Ticket extends Model
         'qr_data',
         'issued_at',
         'checked_in_at',
+        'refunded_at',
     ];
 
     protected $casts = [
         'issued_at' => 'datetime',
         'checked_in_at' => 'datetime',
+        'refunded_at' => 'datetime',
     ];
 
     public function orderItem()
@@ -47,11 +49,11 @@ class Ticket extends Model
     {
         // An active valid ticket must belong to a paid order and not be checked in yet
         $order = $this->orderItem?->order;
-        if (!$order || $order->status !== 'paid') {
+        if (!$order || !in_array($order->status, ['paid', 'partially_refunded'], true) || $this->refunded_at !== null) {
             return false;
         }
 
-        return $this->checked_in_at === null;
+        return $this->checked_in_at === null && $this->refunded_at === null;
     }
 
     public function isAlreadyUsed(): bool
@@ -79,7 +81,7 @@ class Ticket extends Model
 
     public function getQrImageUrlAttribute(): string
     {
-        $payload = urlencode($this->qr_data ?: $this->code);
+        $payload = urlencode($this->code);
         return "https://api.qrserver.com/v1/create-qr-code/?size=280x280&data={$payload}";
     }
 }
