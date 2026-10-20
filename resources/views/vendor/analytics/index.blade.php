@@ -1043,9 +1043,7 @@
     </div>
 
     @push('scripts')
-    {{-- Locally bundled Chart.js (Zero CDN fragility) --}}
-    <script src="{{ asset('js/chart.umd.js') }}"></script>
-
+    {{-- Chart.js is bundled in app.js and registered before Alpine starts. --}}
     <script>
         window.vendorAnalyticsDashboard = function () {
             // Chart.js instances must stay outside Alpine's reactive proxy. Chart.js
