@@ -15,10 +15,10 @@
 @endphp
 
 <div id="{{ $pickerId }}" class="space-y-3" x-data="googleMapPicker({
-    initialLat: {{ $lat ? (float)$lat : 'null' }},
-    initialLng: {{ $lng ? (float)$lng : 'null' }},
+    initialLat: {{ is_numeric($lat) ? (float)$lat : 'null' }},
+    initialLng: {{ is_numeric($lng) ? (float)$lng : 'null' }},
     apiKey: '{{ $apiKey }}'
-})" x-init="init()">
+})">
 
     {{-- Hidden internal coordinate fields (vendors never need to type coordinates manually) --}}
     <input type="hidden" name="latitude" id="event_latitude" :value="coords.lat">
@@ -111,6 +111,9 @@
         </template>
     </div>
 
+    <p x-show="isResolvingLocation" x-cloak role="status" class="text-xs text-slate-500">{{ __('Looking up the selected address...') }}</p>
+    <p x-show="locationError" x-cloak role="alert" class="text-xs text-red-600" x-text="locationError"></p>
+
     {{-- Coordinate Status Badge & Reverse Geocode Info --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs">
         <div class="flex items-center gap-2">
@@ -147,6 +150,8 @@
 
 <script>
 function googleMapPicker(config) {
+    // Keep SDK objects outside Alpine's reactive object graph.
+    const sdk = { map: null, marker: null, geocoder: null, autocomplete: null, leafletMap: null, leafletMarker: null };
     return {
         apiKey: config.apiKey || '',
         coords: {
@@ -157,10 +162,12 @@ function googleMapPicker(config) {
         mapReady: false,
         isLocating: false,
         usingFallback: false,
-        map: null,
-        marker: null,
-        geocoder: null,
-        autocomplete: null,
+        isResolvingLocation: false,
+        locationError: '',
+
+        isCurrentLocation(lat, lng) {
+            return this.coords.lat === Number(lat) && this.coords.lng === Number(lng);
+        },
 
         get hasCoords() {
             return this.coords.lat !== null && this.coords.lng !== null && !isNaN(this.coords.lat) && !isNaN(this.coords.lng);
@@ -232,8 +239,8 @@ function googleMapPicker(config) {
                     ]
                 };
 
-                this.map = new google.maps.Map(this.$refs.mapCanvas, mapOptions);
-                this.geocoder = new google.maps.Geocoder();
+                sdk.map = new google.maps.Map(this.$refs.mapCanvas, mapOptions);
+                sdk.geocoder = new google.maps.Geocoder();
 
                 // If coordinates exist, add marker
                 if (this.hasCoords) {
@@ -241,7 +248,7 @@ function googleMapPicker(config) {
                 }
 
                 // Map click listener to place/move marker
-                this.map.addListener('click', (e) => {
+                sdk.map.addListener('click', (e) => {
                     const clickedLat = e.latLng.lat();
                     const clickedLng = e.latLng.lng();
                     this.setCoordinates(clickedLat, clickedLng);
@@ -251,13 +258,13 @@ function googleMapPicker(config) {
 
                 // Initialize Places Autocomplete on the search input
                 if (window.google.maps.places && this.$refs.searchInput) {
-                    this.autocomplete = new google.maps.places.Autocomplete(this.$refs.searchInput, {
+                    sdk.autocomplete = new google.maps.places.Autocomplete(this.$refs.searchInput, {
                         types: ['geocode', 'establishment'],
                         fields: ['geometry', 'name', 'formatted_address', 'address_components']
                     });
 
-                    this.autocomplete.addListener('place_changed', () => {
-                        const place = this.autocomplete.getPlace();
+                    sdk.autocomplete.addListener('place_changed', () => {
+                        const place = sdk.autocomplete.getPlace();
                         if (!place || !place.geometry || !place.geometry.location) {
                             return;
                         }
@@ -266,8 +273,8 @@ function googleMapPicker(config) {
                         const pLng = place.geometry.location.lng();
                         this.setCoordinates(pLat, pLng);
 
-                        this.map.setCenter({ lat: pLat, lng: pLng });
-                        this.map.setZoom(16);
+                        sdk.map.setCenter({ lat: pLat, lng: pLng });
+                        sdk.map.setZoom(16);
                         this.placeGoogleMarker(pLat, pLng, true);
 
                         // Populate form fields automatically
@@ -283,19 +290,19 @@ function googleMapPicker(config) {
         },
 
         placeGoogleMarker(lat, lng, bounce = false) {
-            if (this.marker) {
-                this.marker.setPosition({ lat, lng });
+            if (sdk.marker) {
+                sdk.marker.setPosition({ lat, lng });
             } else {
-                this.marker = new google.maps.Marker({
+                sdk.marker = new google.maps.Marker({
                     position: { lat, lng },
-                    map: this.map,
+                    map: sdk.map,
                     draggable: true,
                     title: 'Event Venue Location',
                     animation: bounce ? google.maps.Animation.DROP : null,
                 });
 
-                this.marker.addListener('dragend', () => {
-                    const pos = this.marker.getPosition();
+                sdk.marker.addListener('dragend', () => {
+                    const pos = sdk.marker.getPosition();
                     this.setCoordinates(pos.lat(), pos.lng());
                     this.reverseGeocodeGoogle(pos.lat(), pos.lng());
                 });
@@ -303,35 +310,59 @@ function googleMapPicker(config) {
         },
 
         reverseGeocodeGoogle(lat, lng) {
-            if (!this.geocoder) return;
-            this.geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-                if (status === 'OK' && results[0]) {
-                    this.populateFormFieldsFromGooglePlace(results[0], false);
-                }
-            });
+            this.isResolvingLocation = true;
+            this.locationError = '';
+            if (!sdk.geocoder) return this.reverseGeocodeFallback(lat, lng);
+            try {
+                sdk.geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                    if (!this.isCurrentLocation(lat, lng)) return;
+                    if (status === 'OK' && results?.[0]) {
+                        this.populateFormFieldsFromGooglePlace(results[0]);
+                        this.isResolvingLocation = false;
+                    } else {
+                        this.reverseGeocodeFallback(lat, lng);
+                    }
+                });
+            } catch (error) {
+                return this.reverseGeocodeFallback(lat, lng);
+            }
         },
 
         reverseGeocodeFallback(lat, lng) {
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`, {
-                headers: { 'Accept': 'application/json' }
+            this.isResolvingLocation = true;
+            this.locationError = '';
+            return fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`, {
+                headers: { 'Accept': 'application/json' },
+                signal: AbortSignal.timeout(10000)
             })
-            .then(res => res.ok ? res.json() : null)
+            .then(res => {
+                if (!res.ok) throw new Error('Address lookup failed');
+                return res.json();
+            })
             .then(place => {
-                if (!place) return;
-                const parts = place.address || {};
-                const street = [parts.house_number, parts.road].filter(Boolean).join(' ');
-                const city = parts.city || parts.town || parts.village || parts.suburb || parts.county || '';
-                this.setLocationField('address', street || place.display_name || '');
-                this.setLocationField('city', city);
-                this.setLocationField('country', parts.country || '');
+                if (!this.isCurrentLocation(lat, lng)) return;
+                if (!place || place.error || !place.display_name) throw new Error('No address found');
+                this.populateFormFieldsFromNominatim(place);
             })
-            .catch(() => {});
+            .catch(() => {
+                if (this.isCurrentLocation(lat, lng)) {
+                    this.locationError = 'The pin is saved, but its address could not be found. Try another point or enter the address manually.';
+                }
+            })
+            .finally(() => {
+                if (this.isCurrentLocation(lat, lng)) this.isResolvingLocation = false;
+            });
+        },
+
+        locationField(name) {
+            const form = this.$el.closest('form') || this.$el;
+            return form.querySelector(`input[name="${name}"]`);
         },
 
         setLocationField(name, value) {
-            const input = document.querySelector(`input[name="${name}"]`);
-            if (!input || !value) return;
-            input.value = value;
+            const input = this.locationField(name);
+            if (!input) return;
+            input.value = value || '';
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
         },
@@ -355,39 +386,39 @@ function googleMapPicker(config) {
             const streetAddress = (streetNumber ? streetNumber + ' ' : '') + route;
 
             // Fill input fields if found on page
-            const venueInput = document.querySelector('input[name="venue_name"]');
+            const venueInput = this.locationField('venue_name');
 
             this.setLocationField('address', streetAddress || place.formatted_address || '');
 
-            if (city) this.setLocationField('city', city);
+            this.setLocationField('city', city);
 
-            if (country) this.setLocationField('country', country);
+            this.setLocationField('country', country);
 
             if (overrideVenue && venueInput && place.name && !venueInput.value) {
-                venueInput.value = place.name;
+                this.setLocationField('venue_name', place.name);
             }
         },
 
         searchLocation() {
-            const query = this.searchQuery || document.querySelector('input[name="address"]')?.value;
+            const query = this.searchQuery || this.locationField('address')?.value;
             if (!query || query.trim() === '') return;
 
-            if (this.geocoder && !this.usingFallback) {
-                this.geocoder.geocode({ address: query }, (results, status) => {
+            if (sdk.geocoder && !this.usingFallback) {
+                sdk.geocoder.geocode({ address: query }, (results, status) => {
                     if (status === 'OK' && results[0] && results[0].geometry) {
                         const loc = results[0].geometry.location;
                         const sLat = loc.lat();
                         const sLng = loc.lng();
                         this.setCoordinates(sLat, sLng);
-                        this.map.setCenter({ lat: sLat, lng: sLng });
-                        this.map.setZoom(16);
+                        sdk.map.setCenter({ lat: sLat, lng: sLng });
+                        sdk.map.setZoom(16);
                         this.placeGoogleMarker(sLat, sLng, true);
                         this.populateFormFieldsFromGooglePlace(results[0], false);
                     }
                 });
             } else if (this.usingFallback) {
                 // Nominatim fallback search
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+                fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&q=${encodeURIComponent(query)}&limit=1`, {
                     headers: { 'Accept': 'application/json' }
                 })
                 .then(res => res.json())
@@ -396,7 +427,7 @@ function googleMapPicker(config) {
                         const fLat = parseFloat(data[0].lat);
                         const fLng = parseFloat(data[0].lon);
                         this.setCoordinates(fLat, fLng);
-                        this.leafletMap.setView([fLat, fLng], 15);
+                        sdk.leafletMap.setView([fLat, fLng], 15);
                         this.placeLeafletMarker(fLat, fLng);
                         this.populateFormFieldsFromNominatim(data[0]);
                     }
@@ -411,6 +442,9 @@ function googleMapPicker(config) {
             this.setLocationField('address', street || place.display_name || '');
             this.setLocationField('city', parts.city || parts.town || parts.village || parts.suburb || parts.county || '');
             this.setLocationField('country', parts.country || '');
+            if (!this.locationField('venue_name')?.value && place.name) {
+                this.setLocationField('venue_name', place.name);
+            }
         },
 
         locateCurrentPosition() {
@@ -427,13 +461,13 @@ function googleMapPicker(config) {
                     const cLng = position.coords.longitude;
                     this.setCoordinates(cLat, cLng);
 
-                    if (!this.usingFallback && this.map) {
-                        this.map.setCenter({ lat: cLat, lng: cLng });
-                        this.map.setZoom(16);
+                    if (!this.usingFallback && sdk.map) {
+                        sdk.map.setCenter({ lat: cLat, lng: cLng });
+                        sdk.map.setZoom(16);
                         this.placeGoogleMarker(cLat, cLng, true);
                         this.reverseGeocodeGoogle(cLat, cLng);
-                    } else if (this.leafletMap) {
-                        this.leafletMap.setView([cLat, cLng], 15);
+                    } else if (sdk.leafletMap) {
+                        sdk.leafletMap.setView([cLat, cLng], 15);
                         this.placeLeafletMarker(cLat, cLng);
                         this.reverseGeocodeFallback(cLat, cLng);
                     }
@@ -447,20 +481,24 @@ function googleMapPicker(config) {
         },
 
         setCoordinates(lat, lng) {
+            this.locationError = '';
+            this.isResolvingLocation = false;
             this.coords.lat = parseFloat(lat);
             this.coords.lng = parseFloat(lng);
         },
 
         clearPin() {
+            this.locationError = '';
+            this.isResolvingLocation = false;
             this.coords.lat = null;
             this.coords.lng = null;
-            if (this.marker) {
-                this.marker.setMap(null);
-                this.marker = null;
+            if (sdk.marker) {
+                sdk.marker.setMap(null);
+                sdk.marker = null;
             }
-            if (this.leafletMarker && this.leafletMap) {
-                this.leafletMap.removeLayer(this.leafletMarker);
-                this.leafletMarker = null;
+            if (sdk.leafletMarker && sdk.leafletMap) {
+                sdk.leafletMap.removeLayer(sdk.leafletMarker);
+                sdk.leafletMarker = null;
             }
         },
 
@@ -492,23 +530,23 @@ function googleMapPicker(config) {
         renderLeafletMap(lat, lng, zoom) {
             try {
                 this.$refs.mapCanvas.innerHTML = '';
-                this.leafletMap = L.map(this.$refs.mapCanvas).setView([lat, lng], zoom);
+                sdk.leafletMap = L.map(this.$refs.mapCanvas).setView([lat, lng], zoom);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors',
                     maxZoom: 19
-                }).addTo(this.leafletMap);
+                }).addTo(sdk.leafletMap);
 
                 if (this.hasCoords) {
                     this.placeLeafletMarker(lat, lng);
                 }
 
-                this.leafletMap.on('click', (e) => {
+                sdk.leafletMap.on('click', (e) => {
                     const cLat = e.latlng.lat;
                     const cLng = e.latlng.lng;
                     this.setCoordinates(cLat, cLng);
                     this.placeLeafletMarker(cLat, cLng);
-                        this.reverseGeocodeFallback(cLat, cLng);
+                    this.reverseGeocodeFallback(cLat, cLng);
                 });
 
                 this.mapReady = true;
@@ -519,12 +557,12 @@ function googleMapPicker(config) {
         },
 
         placeLeafletMarker(lat, lng) {
-            if (this.leafletMarker) {
-                this.leafletMarker.setLatLng([lat, lng]);
+            if (sdk.leafletMarker) {
+                sdk.leafletMarker.setLatLng([lat, lng]);
             } else {
-                this.leafletMarker = L.marker([lat, lng], { draggable: true }).addTo(this.leafletMap);
-                this.leafletMarker.on('dragend', () => {
-                    const pos = this.leafletMarker.getLatLng();
+                sdk.leafletMarker = L.marker([lat, lng], { draggable: true }).addTo(sdk.leafletMap);
+                sdk.leafletMarker.on('dragend', () => {
+                    const pos = sdk.leafletMarker.getLatLng();
                     this.setCoordinates(pos.lat, pos.lng);
                     this.reverseGeocodeFallback(pos.lat, pos.lng);
                 });
